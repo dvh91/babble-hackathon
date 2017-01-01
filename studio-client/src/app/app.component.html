@@ -1,5 +1,5 @@
 <div class="topbar">
-  <div>Babble</div>
+  <div><img src="assets/babble_white.png" height="27" alt=""></div>
 </div>
 <div class="babble-title">
   <div class="container row">
@@ -11,15 +11,16 @@
       </div>
     </div>
     <div class="babble-title-right">
-      <a href="" class="btn">Publish</a>
+      <button [disabled]="babbles.length === 0" class="btn btn-primary">Publish</button>
     </div>
   </div>
 </div>
 <div class="container">
   <div class="action-bar row">
     <div class="tabs">
-      <a href="" class="tab-item active">All transcript</a>
-      <a href="" class="tab-item">12 Suggestions</a>
+      <a (click)="filter('*')" class="tab-item active">All transcript</a>
+      <a (click)="filter('suggestions')" class="tab-item">12 Suggestions</a>
+      <a (click)="filter('babbles')" class="tab-item">{{babbles.length}} Babbles</a>
     </div>
     <div class="jump">
       <a href="">Jump to current</a>
@@ -30,7 +31,9 @@
     <div class="transcript">
       <div class="transcript-line" *ngFor="let line of transcript">
         <div class="transcript-line-icon">
-          <div *ngIf="isCurrentlyPlaying(line.startTime, line.endTime)">yo</div>
+          <div *ngIf="isCurrentlyPlaying(line.startTime, line.endTime)">
+            <img src="assets/waveforms.gif" width="16" alt="">
+          </div>
           <a *ngIf="!isCurrentlyPlaying(line.startTime, line.endTime)" class="btn btn-play" (click)="seekTo(line.startTime)"></a>
         </div>
         <div class="transcript-line-times">
@@ -73,14 +76,16 @@
     <p>"{{getSelectionSentence()}}"</p>
   </div>
   <div class="babble-popover-body">
-    <p class="babble-popover-language-title text-muted">French transcript:</p>
-    <p>"C’est quoi un crédo?"</p>
+    <a (click)="french()" class="btn">french</a>
+    <a (click)="english()" class="btn">english</a>
     <select class="select">
-      <option value="">Pumba</option>
+      <option *ngFor="let option of characters" value="">{{option.name}}</option>
     </select>
   </div>
   <div class="babble-popover-footer">
-    <a (click)="addBabble()" class="btn btn-primary">Create Babble</a>
+    <button [disabled]="false" (click)="addBabble()" class="btn btn-primary">
+      Create Babble
+    </button>
     <a (click)="cancelPopover()" class="btn btn-link">Cancel</a>
   </div>
 </div>

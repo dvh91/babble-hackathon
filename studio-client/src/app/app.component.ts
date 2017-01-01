@@ -7,7 +7,8 @@ import { UserLoginAction } from '@kaltura-ng2/kaltura-api/dist/services/user';
 import { CaptionAssetListAction, CaptionAssetServeAction } from '@kaltura-ng2/kaltura-api/dist/services/caption-asset';
 import { MediaGetAction } from '@kaltura-ng2/kaltura-api/dist/services/media';
 import { FlavorAssetListAction, FlavorAssetGetUrlAction } from '@kaltura-ng2/kaltura-api/dist/services/flavor-asset';
-import { KalturaAssetFilter, KalturaMediaEntry } from '@kaltura-ng2/kaltura-api/dist/kaltura-types';
+import { MetadataListAction } from '@kaltura-ng2/kaltura-api/dist/services/metadata';
+import { KalturaAssetFilter, KalturaMediaEntry, KalturaMetadataFilter } from '@kaltura-ng2/kaltura-api/dist/kaltura-types';
 
 import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/catch';
@@ -50,7 +51,7 @@ export class AppComponent implements OnInit {
     private kalturaClient: KalturaServerClient,
     private httpConfiguration: KalturaHttpConfiguration) {
 
-    this.assetId = '1_pc8wuugd';
+    this.assetId = '1_76icpd8r';
     this.babbles = [];
     this.characters = [];
     this.transcript = [];
@@ -96,6 +97,7 @@ export class AppComponent implements OnInit {
   seekTo(startTime) {
     let time = this.srtTimeToSeconds(startTime);
     this.kdp.sendNotification('doSeek', time);
+    this.kdp.sendNotification('doPlay');
   }
 
   getEntryCaptions() {
@@ -258,6 +260,19 @@ export class AppComponent implements OnInit {
     console.log(this.downloadUrl);
   }
 
+  getMetadata() {
+    const request = new MetadataListAction({
+      filter: new KalturaMetadataFilter().setData(data => {
+        data.objectIdEqual = this.assetId;
+       })
+    });
+    this.kalturaClient.request(request)
+      .subscribe((res) => {
+        let data = res.result.objects.map(metaData => metaData.xml);
+        console.log(data);
+      });
+  }
+
   getCaptionLineTimes() {
     let selectionLine = this.selection.line;
     let lineObj = this.transcript.filter(line => line.id === selectionLine)[0];
@@ -298,6 +313,18 @@ export class AppComponent implements OnInit {
     return this.babbles.filter(selection => {
       return this.isBabbleSelectedOnWord(selection, wordId, lineId);
     }).length > 0
+  }
+
+  french() {
+    console.log('french');
+  }
+
+  english() {
+    console.log('english');
+  }
+
+  filter(filter) {
+    console.log(filter);
   }
 
   private setInitialSelctionValue() {
