@@ -102,7 +102,7 @@ public class PlayerProvider {
         PlayerConfig playerConfig = new PlayerConfig();
 
         playerConfig.media.setMediaEntry(mediaEntry);
-        playerConfig.media.setStartPosition(MainActivity.START_POSITION);
+        playerConfig.media.setStartPosition(MainActivity.MEDIA_START_POSITION);
 
         Log.v(MainActivity.TAG, "onMediaLoaded startPosition " + playerConfig.media.getStartPosition());
 
