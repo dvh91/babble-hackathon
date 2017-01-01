@@ -1,0 +1,88 @@
+<div class="topbar">
+  <div>Babble</div>
+</div>
+<div class="babble-title">
+  <div class="container row">
+    <div class="babble-title-left">
+      <h1>{{media?.name}}</h1>
+      <div class="characters">
+        <img [src]="c.thumb" class="thumb-circle" *ngFor="let c of characters">
+        <a href="" class="thumb-circle">+</a>
+      </div>
+    </div>
+    <div class="babble-title-right">
+      <a href="" class="btn">Publish</a>
+    </div>
+  </div>
+</div>
+<div class="container">
+  <div class="action-bar row">
+    <div class="tabs">
+      <a href="" class="tab-item active">All transcript</a>
+      <a href="" class="tab-item">12 Suggestions</a>
+    </div>
+    <div class="jump">
+      <a href="">Jump to current</a>
+    </div>
+  </div>
+
+  <div class="main-editor row">
+    <div class="transcript">
+      <div class="transcript-line" *ngFor="let line of transcript">
+        <div class="transcript-line-icon">
+          <div *ngIf="isCurrentlyPlaying(line.startTime, line.endTime)">yo</div>
+          <div *ngIf="!isCurrentlyPlaying(line.startTime, line.endTime)">
+            <a (click)="seekTo(line.startTime)">play</a>
+          </div>
+        </div>
+        <div class="transcript-line-times">
+          {{srtTimeDisplay(line.startTime)}} - {{srtTimeDisplay(line.endTime)}}
+        </div>
+        <div class="transcript-line-text">
+          <div *ngFor="let singleLine of line.content">
+            <span 
+              *ngFor="let wordObj of singleLine" 
+              (mouseup)="onWordMouseUp($event, wordObj, line.id, singleLine)" 
+              (mousedown)="onWordMouseDown($event, wordObj, line.id)"
+              class="word"
+              [class.selected]="isBabbleSelectedOnWord(selection, wordObj.id, line.id)"
+              [class.active]="isBabbleActiveOnWord(wordObj.id, line.id)">
+              {{wordObj.word}}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="video-container">
+      <div class="ratio-maker">
+        <div class="video-holder" id="kaltura-player"></div>
+      </div>
+      <div class="debug-block">
+        <p class="debug-block-title">DEBUGGING INFO</p>
+        <p>currentTime: {{currentTime}}</p>
+        <p>selection.line: {{selection.line}}</p>
+        <p>selection.words: {{selection.words | json}}</p>
+        <p>babbles: {{babbles | json}}</p>
+        <p>languages: {{languages | json}}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div [class.active]="popoverActive()" class="babble-popover" #popover>
+  <div class="babble-popover-header">
+    <img src="http://vignette2.wikia.nocookie.net/lionking/images/0/02/Pumbaa_icons_by_shwz-d3fy8sf.png/revision/latest?cb=20120808023708" class="babble-popover-header-thumb" alt="">
+    <p>"{{getSelectionSentence()}}"</p>
+  </div>
+  <div class="babble-popover-body">
+    <p class="babble-popover-language-title text-muted">French transcript:</p>
+    <p>"C’est quoi un crédo?"</p>
+    <select class="select">
+      <option value="">Pumba</option>
+    </select>
+  </div>
+  <div class="babble-popover-footer">
+    <a (click)="addBabble()" class="btn btn-primary">Create Babble</a>
+    <a (click)="cancelPopover()" class="btn btn-link">Cancel</a>
+  </div>
+</div>
