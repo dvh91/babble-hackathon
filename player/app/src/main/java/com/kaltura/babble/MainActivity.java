@@ -79,8 +79,8 @@ public class MainActivity extends AppCompatActivity {
 
 
                 mBaseLanguagePlayer.play();
-                mSecondLanguagePlayer.play();
-                mSecondLanguagePlayer.setVolume(0);
+                mSecondLanguagePlayer.seekTo(START_TIME);
+
 
             }
 
@@ -102,16 +102,20 @@ public class MainActivity extends AppCompatActivity {
 
 
         if (first) {
+
             mBaseLanguagePlayer.setVolume(0);
-            mSecondLanguagePlayer.setVolume(1);
+            mSecondLanguagePlayer.play();
+
 
             Log.v(MainActivity.TAG, "position " + position + " first = " + first + " second = " + second);
         }
 
 
         if (second) {
+
+            mSecondLanguagePlayer.pause();
             mBaseLanguagePlayer.setVolume(1);
-            mSecondLanguagePlayer.setVolume(0);
+            
 
             Log.v(MainActivity.TAG, "position " + position + " first = " + first + " second = " + second);
         }
