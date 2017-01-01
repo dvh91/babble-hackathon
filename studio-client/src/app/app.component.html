@@ -31,12 +31,10 @@
       <div class="transcript-line" *ngFor="let line of transcript">
         <div class="transcript-line-icon">
           <div *ngIf="isCurrentlyPlaying(line.startTime, line.endTime)">yo</div>
-          <div *ngIf="!isCurrentlyPlaying(line.startTime, line.endTime)">
-            <a (click)="seekTo(line.startTime)">play</a>
-          </div>
+          <a *ngIf="!isCurrentlyPlaying(line.startTime, line.endTime)" class="btn btn-play" (click)="seekTo(line.startTime)"></a>
         </div>
         <div class="transcript-line-times">
-          {{srtTimeDisplay(line.startTime)}} - {{srtTimeDisplay(line.endTime)}}
+          <span (click)="seekTo(line.startTime)">{{srtTimeDisplay(line.startTime)}} - {{srtTimeDisplay(line.endTime)}}</span>
         </div>
         <div class="transcript-line-text">
           <div *ngFor="let singleLine of line.content">

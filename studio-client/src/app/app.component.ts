@@ -1,11 +1,12 @@
 import { Component, ViewEncapsulation, OnInit, ViewChild, Input, ChangeDetectorRef } from '@angular/core';
 import { Http, Response } from '@angular/http';
 import { Observable } from 'rxjs/Rx';
-import { KalturaServerClient, KalturaHttpConfiguration } from '@kaltura-ng2/kaltura-api/dist';
+import { KalturaServerClient, KalturaMultiRequest, KalturaHttpConfiguration } from '@kaltura-ng2/kaltura-api/dist';
 
 import { UserLoginAction } from '@kaltura-ng2/kaltura-api/dist/services/user';
 import { CaptionAssetListAction, CaptionAssetServeAction } from '@kaltura-ng2/kaltura-api/dist/services/caption-asset';
 import { MediaGetAction } from '@kaltura-ng2/kaltura-api/dist/services/media';
+import { FlavorAssetListAction, FlavorAssetGetUrlAction } from '@kaltura-ng2/kaltura-api/dist/services/flavor-asset';
 import { KalturaAssetFilter, KalturaMediaEntry } from '@kaltura-ng2/kaltura-api/dist/kaltura-types';
 
 import 'rxjs/add/operator/map';
@@ -35,6 +36,7 @@ export class AppComponent implements OnInit {
   public selection: Selection;
   public media: KalturaMediaEntry;
   public languages: Array<Language>;
+  private downloadUrl: string;
   private kdp: any;
   private selectionStartXPosition: number;
   private selectionStartYPosition: number;
@@ -48,7 +50,7 @@ export class AppComponent implements OnInit {
     private kalturaClient: KalturaServerClient,
     private httpConfiguration: KalturaHttpConfiguration) {
 
-    this.assetId = '1_xakejtyl';
+    this.assetId = '1_pc8wuugd';
     this.babbles = [];
     this.characters = [];
     this.transcript = [];
@@ -87,20 +89,22 @@ export class AppComponent implements OnInit {
 
         this.getEntryCaptions();
         this.getMediaInfo(this.assetId);
+        this.getDownloadUrl();
       });
   }
 
   seekTo(startTime) {
-    this.kdp.sendNotification('doSeek', 30);
+    let time = this.srtTimeToSeconds(startTime);
+    this.kdp.sendNotification('doSeek', time);
   }
 
   getEntryCaptions() {
-    let filter = new KalturaAssetFilter();
-    filter.entryIdEqual = this.assetId;
-
     const request = new CaptionAssetListAction({
-      filter: filter
-    })
+      filter: new KalturaAssetFilter().setData(data => {
+        data.entryIdEqual = this.assetId;
+       })
+    });
+
     this.kalturaClient.request(request)
       .subscribe((res) => {
         this.languages = res.result.objects.map(captionAsset => {
@@ -137,17 +141,35 @@ export class AppComponent implements OnInit {
       });
   }
 
+  getDownloadUrl() {
+    let filter = new KalturaAssetFilter();
+    filter.entryIdEqual = this.assetId;
+
+    const request = new KalturaMultiRequest(
+      new FlavorAssetListAction({
+        filter: filter
+      }),
+      new FlavorAssetGetUrlAction({
+        id: '1_a5v02c9v'
+      })
+    );
+
+    this.kalturaClient.multiRequest(request)
+      .subscribe(results => {
+        this.downloadUrl = results[1].result;
+      }
+    );
+  }
+
   embedPlayer() {
     kWidget.embed({
       'targetId': 'kaltura-player',
       'wid': '_1914121',
-      'uiconf_id': 12905712,
+      'uiconf_id': 37800171,
       'flashvars': {
-        'streamerType': 'auto',
         'autoPlay': true
       },
-      'cache_st': 1483176103,
-      'entry_id': '1_xakejtyl'
+      'entry_id': this.assetId
     });
 
     kWidget.addReadyCallback((playerId) => {
@@ -233,6 +255,7 @@ export class AppComponent implements OnInit {
   getWordsTimes(start: string, end: string) {
     console.log(start);
     console.log(end);
+    console.log(this.downloadUrl);
   }
 
   getCaptionLineTimes() {

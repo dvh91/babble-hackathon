@@ -51,6 +51,15 @@ a, a:hover {
         color: #203A35;
         text-decoration: underline;
     }
+    &.btn-play {
+        width: 26px;
+        height: 26px;
+        border: 2px solid #BECECB;
+        border-radius: 13px;
+        color: #3875FC;
+        overflow: hidden;
+        padding: 0;
+    }
 }
 .select {
     height: 32px;
@@ -179,6 +188,7 @@ a, a:hover {
                 display: inline-block;
                 width: 160px;
                 vertical-align: top;
+                cursor: pointer;
             }
 
             &-text {
