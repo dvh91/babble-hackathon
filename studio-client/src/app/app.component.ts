@@ -2,10 +2,11 @@ import { Component, ViewEncapsulation, OnInit, ViewChild, Input, ChangeDetectorR
 import { Http, Response } from '@angular/http';
 import { Observable } from 'rxjs/Rx';
 import { KalturaServerClient, KalturaMultiRequest, KalturaHttpConfiguration } from '@kaltura-ng2/kaltura-api/dist';
+import { BabbleConfig } from '../config/config';
 
 import { UserLoginAction } from '@kaltura-ng2/kaltura-api/dist/services/user';
 import { CaptionAssetListAction, CaptionAssetServeAction } from '@kaltura-ng2/kaltura-api/dist/services/caption-asset';
-import { MediaGetAction } from '@kaltura-ng2/kaltura-api/dist/services/media';
+import { MediaGetAction, MediaUpdateAction } from '@kaltura-ng2/kaltura-api/dist/services/media';
 import { FlavorAssetListAction, FlavorAssetGetUrlAction } from '@kaltura-ng2/kaltura-api/dist/services/flavor-asset';
 import { MetadataListAction } from '@kaltura-ng2/kaltura-api/dist/services/metadata';
 import { KalturaAssetFilter, KalturaMediaEntry, KalturaMetadataFilter } from '@kaltura-ng2/kaltura-api/dist/kaltura-types';
@@ -19,6 +20,7 @@ interface Word { id: number; word: string; start?: number; end?: number; }
 interface Selection { words: Array<Word>; line: number; character: number; }
 interface Character { id: number; name: string; thumb: string; }
 interface Language { language: any; languageCode: any; isDefault: any; }
+interface AppState { characters: Array<Character>, babbles: Array<Selection> }
 
 @Component({
   selector: 'app-root',
@@ -30,13 +32,13 @@ export class AppComponent implements OnInit {
   @ViewChild('popover') popover: any;
 
   private assetId: string;
-  public babbles: Array<Selection>;
-  public characters: Array<Character>;
+  public state: AppState;
   public transcript: Array<any>;
   public currentTime: number;
   public selection: Selection;
   public media: KalturaMediaEntry;
   public languages: Array<Language>;
+  public initialState: any;
   private downloadUrl: string;
   private kdp: any;
   private selectionStartXPosition: number;
@@ -52,8 +54,7 @@ export class AppComponent implements OnInit {
     private httpConfiguration: KalturaHttpConfiguration) {
 
     this.assetId = '1_76icpd8r';
-    this.babbles = [];
-    this.characters = [];
+    this.state = { characters: [], babbles: [] };
     this.transcript = [];
     this.languages = [];
     this.currentTime = 0;
@@ -64,25 +65,13 @@ export class AppComponent implements OnInit {
   ngOnInit() {
     this.embedPlayer();
     this.login();
-    this.getCharacters();
-  }
-
-  getCharacters() {
-    let character: Character = {
-      id: 1,
-      name: 'Pumba',
-      thumb: 'http://vignette2.wikia.nocookie.net/lionking/images/0/02/Pumbaa_icons_by_shwz-d3fy8sf.png/revision/latest?cb=20120808023708'
-    }
-    for(let i = 0; i < 4; i++) {
-      this.characters.push(character)
-    };
   }
 
   login(): void {
     const request = new UserLoginAction({
       partnerId: this.httpConfiguration.partnerId,
-      userId: 'USERNAME',
-      password: 'PASSWORD'
+      userId: BabbleConfig.username,
+      password: BabbleConfig.password
     });
     this.kalturaClient.request(request)
       .subscribe((res) => {
@@ -140,6 +129,8 @@ export class AppComponent implements OnInit {
     this.kalturaClient.request(request)
       .subscribe((res) => {
         this.media = res.result;
+        let initialAppState: AppState = JSON.parse(res.result.description);
+        this.state = initialAppState;
       });
   }
 
@@ -253,11 +244,15 @@ export class AppComponent implements OnInit {
     this.positionPopover();
   }
 
-  // #TODO: nodejs server: get audio for selected times. 
   getWordsTimes(start: string, end: string) {
-    console.log(start);
-    console.log(end);
-    console.log(this.downloadUrl);
+    this.http.get(`http://localhost:3030/audio/alignment?downloadUrl=${this.downloadUrl}&start=0&duration=5`)
+      .map(res => res.json())
+      .subscribe(res => {
+        this.http.get(`http://localhost:3030/job/get?jobid=${res.jobid}`)
+          .subscribe(res => {
+            console.log(res);
+          })
+      })
   }
 
   getMetadata() {
@@ -296,7 +291,7 @@ export class AppComponent implements OnInit {
       line: this.selection.line,
       character: 0
     };
-    this.babbles.push(babble);
+    this.state.babbles.push(babble);
     this.resetSelection();
     this.popoverActiveState = false;
   }
@@ -310,7 +305,7 @@ export class AppComponent implements OnInit {
   }
 
   isBabbleActiveOnWord(wordId, lineId): boolean {
-    return this.babbles.filter(selection => {
+    return this.state.babbles.filter(selection => {
       return this.isBabbleSelectedOnWord(selection, wordId, lineId);
     }).length > 0
   }
@@ -325,6 +320,19 @@ export class AppComponent implements OnInit {
 
   filter(filter) {
     console.log(filter);
+  }
+
+  publishBabbles() {
+    const request = new MediaUpdateAction({ 
+      entryId: this.assetId,
+      mediaEntry: new KalturaMediaEntry().setData(data => {
+        data.description = JSON.stringify(this.state);
+      }) 
+    });
+    this.kalturaClient.request(request)
+      .subscribe((res) => {
+        this.state = JSON.parse(res.result.description);
+      });
   }
 
   private setInitialSelctionValue() {

@@ -1,0 +1,4 @@
+export const BabbleConfig = {
+  username: 'USERNAME',
+  password: 'PASSWORD'
+};
