@@ -1,5 +1,5 @@
 import { Component, ViewEncapsulation, OnInit, ViewChild, Input, ChangeDetectorRef } from '@angular/core';
-import { Http, Response } from '@angular/http';
+import { Http, Response, Headers } from '@angular/http';
 import { Observable } from 'rxjs/Rx';
 import { KalturaServerClient, KalturaMultiRequest, KalturaHttpConfiguration } from '@kaltura-ng2/kaltura-api/dist';
 import { BabbleConfig } from '../config/config';
@@ -40,6 +40,7 @@ export class AppComponent implements OnInit {
   public media: KalturaMediaEntry;
   public languages: Array<Language>;
   public initialState: any;
+  public wordsAlignment: Array<any>;
   private assetId: string;
   private downloadUrl: string;
   private kdp: any;
@@ -55,7 +56,7 @@ export class AppComponent implements OnInit {
     private kalturaClient: KalturaServerClient,
     private httpConfiguration: KalturaHttpConfiguration) {
 
-    this.assetId = '1_76icpd8r';
+    this.assetId = '1_umer46fd';
     this.state = { characters: [], babbles: [] };
     this.transcript = [];
     this.languages = [];
@@ -140,9 +141,39 @@ export class AppComponent implements OnInit {
     this.kalturaClient.request(request)
       .subscribe((res) => {
         this.media = res.result;
+        let jobId = '1381090';
         let initialAppState: AppState = JSON.parse(res.result.description);
         this.state = initialAppState;
+        this.getTranscriptAlignment(jobId);
       });
+  }
+
+  getTranscriptAlignment(jobId: string) {
+    let wordsAlignment = [];
+    this.http.get(`https://speechmatics.com/user/${BabbleConfig.smUserId}/jobs/${jobId}/alignment?auth_token=${BabbleConfig.smAuthToken}`)
+      .map(res => res.text())
+      .subscribe(res => {
+        let text = res;
+        let words = text.split(' ');
+        
+        words.forEach((w, index) => {
+          let regex = /<time=[0-9]*\.[0-9]*>/ig;
+          let results = w.match(regex);
+          
+          let word = w.match(/>(.*)</)[1];
+          let startTimeString = results[0].match(/[0-9]*\.[0-9]*/)[0];
+          let endTimeString = results[1].match(/[0-9]*\.[0-9]*/)[0];
+
+          let wordObj = {
+            word: word,
+            start: parseFloat(startTimeString),
+            end: parseFloat(endTimeString)
+          }
+          wordsAlignment.push(wordObj);
+        });
+
+        this.wordsAlignment = wordsAlignment;
+        })
   }
 
   getDownloadUrl() {
@@ -161,6 +192,7 @@ export class AppComponent implements OnInit {
     this.kalturaClient.multiRequest(request)
       .subscribe(results => {
         this.downloadUrl = results[1].result;
+        console.log(this.downloadUrl);
       }
     );
   }
@@ -171,7 +203,10 @@ export class AppComponent implements OnInit {
       'wid': '_1914121',
       'uiconf_id': 37800171,
       'flashvars': {
-        'autoPlay': true
+        'autoPlay': true,
+        'EmbedPlayer': {
+          'MonitorRate': 50
+        }
       },
       'entry_id': this.assetId
     });
@@ -181,6 +216,10 @@ export class AppComponent implements OnInit {
 
       this.kdp.kBind('playerUpdatePlayhead', (currentTime) => {
         this.updateCurrentTime(currentTime);
+      });
+
+      this.kdp.kBind('audioTracksReceived' ,(e,data) => {
+        console.log(data);
       });
     });
   }
@@ -247,23 +286,26 @@ export class AppComponent implements OnInit {
 
   showBabblePopover() {
     let lineTimes = this.getCaptionLineTimes();
-    this.getWordsTimes(lineTimes[0], lineTimes[1]);
-      // .subscribe(res => {
-        // #TODO: map response to words objects.
-      // })
+    this.getWordsTime(this.selection.words, lineTimes)
     this.popoverActiveState = true;
     this.positionPopover();
   }
 
-  getWordsTimes(start: string, end: string) {
-    this.http.get(`http://localhost:3030/audio/alignment?downloadUrl=${this.downloadUrl}&start=0&duration=5`)
-      .map(res => res.json())
-      .subscribe(res => {
-        this.http.get(`http://localhost:3030/job/get?jobid=${res.jobid}`)
-          .subscribe(res => {
-            console.log(res);
-          })
-      })
+  getWordsTime(words: Array<Word>, lineTimes) {
+    let lineStartTime = this.srtTimeToSeconds(lineTimes[0]);
+    let lineEndTime = this.srtTimeToSeconds(lineTimes[1]);
+    words.forEach(wordObj => {
+      wordObj.word
+      let foundWord = this.wordsAlignment.filter(w => {
+        return (w.start >= (lineStartTime - 0.5)) && (w.end <= (lineEndTime + 0.5)) && w.word === wordObj.word;
+      });
+      if(foundWord.length > 0) {
+        wordObj.start = foundWord[0].start;
+        wordObj.end = foundWord[0].end;
+
+        console.log(wordObj);
+      }
+    });
   }
 
   getMetadata() {
@@ -321,8 +363,15 @@ export class AppComponent implements OnInit {
     }).length > 0
   }
 
-  french() {
-    console.log('french');
+  playSelectionAudio(languageCode) {
+    this.kdp.sendNotification('switchAudioTrack', {index: languageCode });
+    this.kdp.sendNotification('doSeek', this.selection.words[0].start);
+    this.kdp.kBind('playerUpdatePlayhead', (currentTime) => {
+      if(currentTime >= this.selection.words[this.selection.words.length - 1].end + 0.1) {
+        this.kdp.sendNotification('doPause');
+      }
+    });
+    this.kdp.sendNotification('doPlay');
   }
 
   english() {

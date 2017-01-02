@@ -111,6 +111,20 @@ a, a:hover {
         float: left; 
         width: 50%;
         text-align: right;
+
+        .language-selector {
+            width: 26px;
+            height: 22px;
+            display: inline-block;
+            background-color: #D8D8D8;
+            border: 1px solid #DBE5E3;
+            border-radius: 2px;
+            overflow: hidden;
+            background-size: 100% 100%;
+            background-image: url('http://www.redcafe.net/img/matchday/flags/france.gif');
+            vertical-align: middle;
+            margin-right: 20px;
+        }
     }
 
     h1 {
@@ -190,9 +204,17 @@ a, a:hover {
         &-line {
             padding: 11px 0;
 
+            .btn-play {
+                display: none;
+            }
+
             &:hover {
                 background-color: #F4F9F8;
                 border-radius: 4px;
+                
+                .btn-play {
+                    display: block;
+                }
             }
 
             &-times {
@@ -335,6 +357,7 @@ a, a:hover {
     font-size: 14px;
     padding: 14px;
     margin-top: 24px;
+    overflow: hidden;
 
     &-title {
         font-weight: 500;

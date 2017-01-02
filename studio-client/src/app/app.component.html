@@ -11,9 +11,7 @@
       </div>
     </div>
     <div class="babble-title-right">
-      <div>
-        <a (click)="activateLanguage(l)" *ngFor="let l of languages">{{l.language}}</a>
-      </div>
+      <a class="language-selector"></a>
       <button (click)="publishBabbles()" [disabled]="state.babbles.length === 0" class="btn btn-primary">Publish</button>
     </div>
   </div>
@@ -78,8 +76,8 @@
     <p>"{{getSelectionSentence()}}"</p>
   </div>
   <div class="babble-popover-body">
-    <a (click)="french()" class="btn">french</a>
-    <a (click)="english()" class="btn">english</a>
+    <a (click)="playSelectionAudio(0)" class="btn">french</a>
+    <a (click)="playSelectionAudio(1)" class="btn">english</a>
     <select class="select">
       <option *ngFor="let option of state.characters" value="">{{option.name}}</option>
     </select>
