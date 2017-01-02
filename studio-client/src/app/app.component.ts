@@ -368,7 +368,7 @@ export class AppComponent implements OnInit {
   }
 
   isBabbleSelectedOnWord(selection: Selection, wordId, word, lineId): boolean {
-    return (selection.words.filter(wordObj => wordObj.id === wordId && wordObj.word === word).length > 0) && (selection.line === lineId);
+    return (selection.words.filter(wordObj => wordObj.id === wordId && (word ? wordObj.word === word : true)).length > 0) && (selection.line === lineId);
   }
 
   isBabbleActiveOnWord(wordId, word, lineId): boolean {
@@ -378,7 +378,7 @@ export class AppComponent implements OnInit {
   }
 
   isStartBabbleActiveOnWord(wordId, word, lineId): boolean {
-    return this.isBabbleActiveOnWord(wordId, word, lineId) && !this.isBabbleActiveOnWord(wordId - 1, word, lineId);
+    return this.isBabbleActiveOnWord(wordId, word, lineId) && !this.isBabbleActiveOnWord(wordId - 1, '', lineId);
   }
 
   playSelectionAudio(languageCode) {
