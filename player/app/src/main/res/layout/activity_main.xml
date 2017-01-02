@@ -41,6 +41,19 @@
     </FrameLayout>
 
 
+
+    <ImageView
+        android:id="@+id/babble_protection"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:src="@drawable/babble_gradient"
+        android:visibility="invisible"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintBottom_toBottomOf="@+id/player_container"
+        app:layout_constraintTop_toTopOf="@+id/player_container"/>
+
+
     <ImageView
         android:id="@+id/babble_controller_background"
         android:layout_width="wrap_content"
@@ -53,6 +66,7 @@
         android:src="@drawable/play_button"/>
 
 
+
     <ImageView
         android:id="@+id/babble_controller_button"
         android:layout_width="wrap_content"
@@ -62,7 +76,6 @@
         app:layout_constraintRight_toRightOf="@id/babble_controller_background"
         app:layout_constraintTop_toTopOf="@id/babble_controller_background"
         app:layout_constraintBottom_toBottomOf="@id/babble_controller_background"/>
-
 
 
     <ImageView
@@ -90,6 +103,20 @@
         android:layout_marginLeft="32dp"
         android:layout_marginStart="32dp"/>
 
+
+
+    <TextView
+        android:id="@+id/babble_triangle"
+        android:layout_width="100dp"
+        android:layout_height="42dp"
+        android:background="@drawable/background_caption"
+        android:textColor="@android:color/white"
+        android:gravity="center"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toTopOf="@+id/babble_original_controller"
+        app:layout_constraintLeft_toLeftOf="@+id/babble_original_controller"
+        app:layout_constraintRight_toRightOf="@+id/babble_original_controller"
+        android:layout_marginBottom="16dp"/>
 
 
 

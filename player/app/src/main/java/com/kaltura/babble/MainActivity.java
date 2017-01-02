@@ -1,5 +1,8 @@
 package com.kaltura.babble;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ObjectAnimator;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -7,6 +10,7 @@ import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import java.util.Timer;
 import java.util.TimerTask;
@@ -28,14 +32,19 @@ public class MainActivity extends AppCompatActivity  {
 
 
     //public static final long MEDIA_START_POSITION = 18;
-    public static final long MEDIA_START_POSITION = 36;
     //private static final long BABBLE_START_TIME = 24740;
     //private static final long BABBLE_END_TIME = 28900;
+
+    //public static final long MEDIA_START_POSITION = 30;
+    public static final long MEDIA_START_POSITION = 45;
     private static final long BABBLE_START_TIME = 49070;
     private static final long BABBLE_END_TIME = 49500;
     private static final long BABBLE_APPEARANCE_INTERVAL = 3000;
     private static final long PLAYER_INVALID_POSITION = -1;
     private static final long LONG_EQUALS = 15;
+
+    private static final String BABBLE_ORIGIN_PHRASE = "Thanks!";
+    private static final String BABBLE_SECONDARY_PHRASE = "Merci!";
 
 
     private PlayerControlsController mPlayerControlsController;
@@ -57,6 +66,8 @@ public class MainActivity extends AppCompatActivity  {
     private ImageView mBabbleOriginController;
     private ImageView mBabbleSecondaryController;
     private ImageView mBabbleControllerButton;
+    private ImageView mBabbleProtection;
+    private TextView mControllerBabbleTriangle;
 
 
     enum BabbleState {
@@ -87,6 +98,8 @@ public class MainActivity extends AppCompatActivity  {
         mPlayerContainer = (FrameLayout) findViewById(R.id.player_container);
         mPlayerView = (LinearLayout) findViewById(R.id.player_view);
         mPlayerControlsView = (PlayerControlsView) findViewById(R.id.player_controls_view);
+        mBabbleProtection = (ImageView) findViewById(R.id.babble_protection);
+        mControllerBabbleTriangle = (TextView) findViewById(R.id.babble_triangle);
 
         mPlayerControlsController = new PlayerControlsController(mPlayerControlsView);
         mPlayerContainer.setOnClickListener(new View.OnClickListener() {
@@ -122,7 +135,7 @@ public class MainActivity extends AppCompatActivity  {
 
             @Override
             public void onClick(View view) {
-                handleHandleBabbleClick(mBabbleOriginController, MAIN_BABBLE);
+                handleBabbleClick(mBabbleOriginController, MAIN_BABBLE);
             }
         });
 
@@ -131,7 +144,7 @@ public class MainActivity extends AppCompatActivity  {
 
             @Override
             public void onClick(View view) {
-                handleHandleBabbleClick(mBabbleSecondaryController, SECOND_BABBLE);
+                handleBabbleClick(mBabbleSecondaryController, SECOND_BABBLE);
             }
         });
 
@@ -143,18 +156,36 @@ public class MainActivity extends AppCompatActivity  {
     }
 
 
-    private void handleHandleBabbleClick(ImageView imageView, BabbleState babblePlayingState) {
+    private void handleBabbleClick(final ImageView imageView, BabbleState babblePlayingState) {
 
-
-        imageView.getLayoutParams().width = 100;
-        imageView.getLayoutParams().height = 100;
-
+        viewScaleAnimation(imageView);
+        rectangleAnim();
 
         playBabble(babblePlayingState);
 
-
-
     }
+
+
+    private void viewScaleAnimation(final View view) {
+
+        float scalingFactor = 1.25f;
+        view.setScaleX(scalingFactor);
+        view.setScaleY(scalingFactor);
+
+        view.postDelayed(new Runnable() {
+
+            @Override
+            public void run() {
+
+                float scalingFactor = 1.0f;
+                view.setScaleX(scalingFactor);
+                view.setScaleY(scalingFactor);
+
+            }
+
+        }, 250);
+    }
+
 
 
     private void initPLayers() {
@@ -233,8 +264,47 @@ public class MainActivity extends AppCompatActivity  {
     }
 
 
-    private void playBabble(BabbleState babblePlayingState) {
+    private void rectangleAnim() {
 
+        ObjectAnimator anim = ObjectAnimator.ofFloat(mControllerBabbleTriangle, "scaleX", 0f, 1f);
+        anim.setDuration(150);
+        mControllerBabbleTriangle.setText("");
+        mControllerBabbleTriangle.setVisibility(View.VISIBLE);
+        anim.start();
+
+        anim.addListener(new AnimatorListenerAdapter() {
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+
+                mControllerBabbleTriangle.setText(BABBLE_ORIGIN_PHRASE);
+
+                mControllerBabbleTriangle.postDelayed(new Runnable() {
+
+                    @Override
+                    public void run() {
+
+                        mControllerBabbleTriangle.setText("");
+                        ObjectAnimator anim = ObjectAnimator.ofFloat(mControllerBabbleTriangle, "scaleX", 1f, 0f);
+                        anim.setDuration(150);
+                        anim.start();
+
+                    }
+
+                }, 2000);
+
+
+
+            }
+
+        });
+
+    }
+
+
+
+
+    private void playBabble(BabbleState babblePlayingState) {
 
         switch (babblePlayingState) {
 
@@ -325,6 +395,7 @@ public class MainActivity extends AppCompatActivity  {
 
 
             setBabbleController(false, false);
+            mBabbleProtection.setVisibility(View.INVISIBLE);
             mBabbleOriginController.setVisibility(View.INVISIBLE);
             mBabbleSecondaryController.setVisibility(View.INVISIBLE);
 
@@ -338,9 +409,11 @@ public class MainActivity extends AppCompatActivity  {
             mPausedPosition = mBaseAudioPlayer.getCurrentPosition();
 
             mInvokeBabbleListener = true;
+
             setBabbles();
 
             setBabbleController(true, true);
+            mBabbleProtection.setVisibility(View.VISIBLE);
             mBabbleOriginController.setVisibility(View.VISIBLE);
             mBabbleSecondaryController.setVisibility(View.VISIBLE);
 
