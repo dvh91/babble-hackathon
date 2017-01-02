@@ -10,7 +10,9 @@ import android.widget.LinearLayout;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import com.kaltura.playkit.PKEvent;
 import com.kaltura.playkit.Player;
+import com.kaltura.playkit.PlayerEvent;
 
 import static com.kaltura.babble.MainActivity.BabbleState.MAIN_BABBLE;
 import static com.kaltura.babble.MainActivity.BabbleState.NONE;
@@ -37,15 +39,15 @@ public class MainActivity extends AppCompatActivity {
     private long mPausedPosition;
 
     private LinearLayout mPlayerContainer;
-    private Player mBaseLanguagePlayer;
-    private Player mSecondLanguagePlayer;
+    private Player mVideoPlayer;
+    private Player mBaseAudioPlayer;
+    private Player mSecondAudioPlayer;
 
     private UpdateProgressTask mUpdateProgressTask;
     private ImageView mBabbleControllerBackground;
     private ImageView mBabbleOriginController;
     private ImageView mBabbleSecondaryController;
     private ImageView mBabbleControllerButton;
-    private ImageView mAtmosphereImage;
 
 
     enum BabbleState {
@@ -73,8 +75,6 @@ public class MainActivity extends AppCompatActivity {
         mBabbleOriginController = (ImageView) findViewById(R.id.babble_original_controller);
         mBabbleSecondaryController = (ImageView) findViewById(R.id.babble_secondary_controller);
         mBabbleControllerButton = (ImageView) findViewById(R.id.babble_controller_button);
-        mAtmosphereImage = (ImageView) findViewById(R.id.atmosphere_image);
-
 
         mBabbleControllerButton.setOnClickListener(new View.OnClickListener() {
 
@@ -127,24 +127,25 @@ public class MainActivity extends AppCompatActivity {
 
 
             @Override
-            public void onPlayerReady(Player basePlayer, Player secondPlayer) {
+            public void onPlayerReady(Player videoPlayer, Player baseAudioPlayer, Player secondAudioPlayer) {
 
-                if (basePlayer == null || secondPlayer == null) {
+                if (videoPlayer == null || baseAudioPlayer == null || secondAudioPlayer == null) {
                     Log.v(MainActivity.TAG, "error");
                     return;
                 }
 
 
-                mBaseLanguagePlayer = basePlayer;
-                mSecondLanguagePlayer = secondPlayer;
+                mVideoPlayer = videoPlayer;
+                mBaseAudioPlayer = baseAudioPlayer;
+                mSecondAudioPlayer = secondAudioPlayer;
 
                 mPlayerContainer.removeAllViews();
-                mPlayerContainer.addView(mBaseLanguagePlayer.getView());
+                mPlayerContainer.addView(mVideoPlayer.getView());
 
 
-                mBaseLanguagePlayer.play();
-                mSecondLanguagePlayer.seekTo(BABBLE_START_TIME);
-
+                mVideoPlayer.play();
+                mBaseAudioPlayer.play();
+                mSecondAudioPlayer.seekTo(BABBLE_START_TIME);
 
             }
 
@@ -160,11 +161,11 @@ public class MainActivity extends AppCompatActivity {
         switch (babblePlayingState) {
 
             case MAIN_BABBLE:
-                mBaseLanguagePlayer.play();
+                mBaseAudioPlayer.play();
                 break;
 
             case SECOND_BABBLE:
-                mSecondLanguagePlayer.play();
+                mSecondAudioPlayer.play();
                 break;
         }
 
@@ -184,13 +185,13 @@ public class MainActivity extends AppCompatActivity {
             switch (mBabblePlayingState) {
 
                 case MAIN_BABBLE:
-                    mBaseLanguagePlayer.pause();
-                    mBaseLanguagePlayer.seekTo(BABBLE_START_TIME);
+                    mBaseAudioPlayer.pause();
+                    mBaseAudioPlayer.seekTo(BABBLE_START_TIME);
                     break;
 
                 case SECOND_BABBLE:
-                    mSecondLanguagePlayer.pause();
-                    mSecondLanguagePlayer.seekTo(BABBLE_START_TIME);
+                    mSecondAudioPlayer.pause();
+                    mSecondAudioPlayer.seekTo(BABBLE_START_TIME);
                     break;
             }
 
@@ -210,12 +211,13 @@ public class MainActivity extends AppCompatActivity {
 
     private void setBabbles() {
 
-        mBaseLanguagePlayer.setVolume(1);
-        mBaseLanguagePlayer.seekTo(BABBLE_START_TIME);
-        mSecondLanguagePlayer.seekTo(BABBLE_START_TIME);
+        mBaseAudioPlayer.setVolume(1);
 
-        mBaseLanguagePlayer.pause();
-        mSecondLanguagePlayer.pause();
+        mBaseAudioPlayer.seekTo(BABBLE_START_TIME);
+        mSecondAudioPlayer.seekTo(BABBLE_START_TIME);
+
+        mBaseAudioPlayer.pause();
+        mSecondAudioPlayer.pause();
 
     }
 
@@ -224,31 +226,43 @@ public class MainActivity extends AppCompatActivity {
 
         if (mIsPaused) { // if pause - we continue to play
 
-            mBaseLanguagePlayer.seekTo(mPausedPosition);
-            mBaseLanguagePlayer.setVolume(1);
-            mBaseLanguagePlayer.play();
-            //mSecondLanguagePlayer.seekTo(NEXT_SWTICH);
+            mBaseAudioPlayer.pause();
+            mBaseAudioPlayer.seekTo(mPausedPosition);
+            mBaseAudioPlayer.addEventListener(new PKEvent.Listener() {
 
-            mInvokeBabbleListener = false;
+                @Override
+                public void onEvent(PKEvent event) {
+
+                    mBaseAudioPlayer.setVolume(1);
+                    mVideoPlayer.play();
+                    mBaseAudioPlayer.play();
+
+                    mInvokeBabbleListener = false;
+
+                    //mSecondAudioPlayer.seekTo(NEXT_SWTICH);
+
+                }
+
+            }, PlayerEvent.Type.SEEKED);
+
 
             setBabbleController(false, false);
             mBabbleOriginController.setVisibility(View.INVISIBLE);
             mBabbleSecondaryController.setVisibility(View.INVISIBLE);
-            mAtmosphereImage.setVisibility(View.INVISIBLE);
-
 
 
         } else { // if playing - we pause
 
-            mBaseLanguagePlayer.pause();
-            mSecondLanguagePlayer.pause();
-            mPausedPosition = mBaseLanguagePlayer.getCurrentPosition();
+            mVideoPlayer.pause();
+            mBaseAudioPlayer.pause();
+            mSecondAudioPlayer.pause();
+
+            mPausedPosition = mBaseAudioPlayer.getCurrentPosition();
 
             mInvokeBabbleListener = true;
             setBabbles();
 
             setBabbleController(true, true);
-            mAtmosphereImage.setVisibility(View.VISIBLE);
             mBabbleOriginController.setVisibility(View.VISIBLE);
             mBabbleSecondaryController.setVisibility(View.VISIBLE);
 
@@ -300,8 +314,8 @@ public class MainActivity extends AppCompatActivity {
 
         if (startSwitch) {
 
-            mBaseLanguagePlayer.setVolume(0);
-            mSecondLanguagePlayer.play();
+            mBaseAudioPlayer.setVolume(0);
+            mSecondAudioPlayer.play();
 
             Log.v(MainActivity.TAG, "position " + position + " startSwitch = " + startSwitch + " endSwitch = " + endSwitch);
         }
@@ -309,8 +323,8 @@ public class MainActivity extends AppCompatActivity {
 
         if (endSwitch) {
 
-            mSecondLanguagePlayer.pause();
-            mBaseLanguagePlayer.setVolume(1);
+            mSecondAudioPlayer.pause();
+            mBaseAudioPlayer.setVolume(1);
 
             Log.v(MainActivity.TAG, "position " + position + " startSwitch = " + startSwitch + " endSwitch = " + endSwitch);
         }
@@ -364,18 +378,18 @@ public class MainActivity extends AppCompatActivity {
 
                         long position;
 
-                        if (mBaseLanguagePlayer != null && mSecondLanguagePlayer != null) {
+                        if (mVideoPlayer != null && mBaseAudioPlayer != null && mSecondAudioPlayer != null) {
 
                             if (mInvokeBabbleListener) {
 
                                 switch (mBabblePlayingState) {
 
                                     case MAIN_BABBLE:
-                                        position = mBaseLanguagePlayer.getCurrentPosition();
+                                        position = mBaseAudioPlayer.getCurrentPosition();
                                         break;
 
                                     case SECOND_BABBLE:
-                                        position = mSecondLanguagePlayer.getCurrentPosition();
+                                        position = mSecondAudioPlayer.getCurrentPosition();
                                         break;
 
                                     default:
@@ -390,11 +404,13 @@ public class MainActivity extends AppCompatActivity {
 
                             } else {
 
-                                position = mBaseLanguagePlayer.getCurrentPosition();
+                                position = mVideoPlayer.getCurrentPosition();
                                 switchAudio(position);
 
                             }
                         }
+
+
 
                     }
                 });
