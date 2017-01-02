@@ -10,10 +10,12 @@ import {
 } from '@kaltura-ng2/kaltura-api/dist';
 
 import { AppComponent } from './app.component';
+import { TranscriptPipe } from './filters/transcript-filter';
 
 @NgModule({
   declarations: [
-    AppComponent
+    AppComponent,
+    TranscriptPipe
   ],
   imports: [
     BrowserModule,
