@@ -7,6 +7,11 @@ body, html {
 * {
     box-sizing: border-box;
 }
+a:hover, a:active, a:focus,
+button:hover, button:active, button:focus,
+select:hover, select:active, select:focus {
+  outline: 0;
+}
 h1, h2, p {
     margin: auto;
 }

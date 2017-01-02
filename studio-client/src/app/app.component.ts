@@ -42,6 +42,7 @@ export class AppComponent implements OnInit {
   public languages: Array<Language>;
   public initialState: any;
   public wordsAlignment: Array<any>;
+  public editorDirty: boolean;
   private assetId: string;
   private downloadUrl: string;
   private kdp: any;
@@ -64,8 +65,9 @@ export class AppComponent implements OnInit {
     this.transcript = [];
     this.languages = [];
     this.currentTime = 0;
-    this.selection = this.setInitialSelctionValue();
     this.popoverActiveState = false;
+    this.editorDirty = false;
+    this.setInitialSelctionValue();
   }
 
   ngOnInit() {
@@ -346,6 +348,7 @@ export class AppComponent implements OnInit {
   }
 
   addBabble() {
+    this.editorDirty = true;
     let babble: Selection = {
       words: this.selection.words,
       line: this.selection.line,
@@ -364,18 +367,18 @@ export class AppComponent implements OnInit {
     return this.state.characters.filter(c => c.id === id)[0];
   }
 
-  isBabbleSelectedOnWord(selection: Selection, wordId, lineId): boolean {
-    return (selection.words.filter(wordObj => wordObj.id === wordId).length > 0) && (selection.line === lineId);
+  isBabbleSelectedOnWord(selection: Selection, wordId, word, lineId): boolean {
+    return (selection.words.filter(wordObj => wordObj.id === wordId && wordObj.word === word).length > 0) && (selection.line === lineId);
   }
 
-  isBabbleActiveOnWord(wordId, lineId): boolean {
+  isBabbleActiveOnWord(wordId, word, lineId): boolean {
     return this.state.babbles.filter(selection => {
-      return this.isBabbleSelectedOnWord(selection, wordId, lineId);
+      return this.isBabbleSelectedOnWord(selection, wordId, word, lineId);
     }).length > 0
   }
 
-  isStartBabbleActiveOnWord(wordId, lineId): boolean {
-    return this.isBabbleActiveOnWord(wordId, lineId) && !this.isBabbleActiveOnWord(wordId - 1, lineId);
+  isStartBabbleActiveOnWord(wordId, word, lineId): boolean {
+    return this.isBabbleActiveOnWord(wordId, word, lineId) && !this.isBabbleActiveOnWord(wordId - 1, word, lineId);
   }
 
   playSelectionAudio(languageCode) {
@@ -394,11 +397,12 @@ export class AppComponent implements OnInit {
     
   }
 
-  filter(filter) {
+  filter(filter): void {
     this.filterState = filter;
   }
 
-  publishBabbles() {
+  publishBabbles(): void {
+    this.editorDirty = false;
     const request = new MediaUpdateAction({ 
       entryId: this.assetId,
       mediaEntry: new KalturaMediaEntry().setData(data => {
@@ -412,30 +416,30 @@ export class AppComponent implements OnInit {
       });
   }
 
-  showToast() {
+  showToast(): void {
     this.toast = true;
     setTimeout(() => this.toast = false, 2000);
   }
 
-  chooseCharacter(id) {
+  chooseCharacter(id): void {
     this.selection.character = parseInt(id);
   }
 
-  private setInitialSelctionValue() {
+  private setInitialSelctionValue(): void {
     let selection: Selection = {
       words: [],
       line: -1,
       character: 1
     };
 
-    return this.selection = selection;
+    this.selection = selection;
   }
 
-  private resetSelection() {
-    this.selection = this.setInitialSelctionValue();
+  private resetSelection(): void {
+    this.setInitialSelctionValue();
   }
 
-  private positionPopover() {
+  private positionPopover(): void {
     let x = Math.abs((this.selectionEndXPosition - this.selectionStartXPosition) / 2);
 
     this.popover.nativeElement.style.left = `${x + Math.min(this.selectionEndXPosition, this.selectionStartXPosition) - 165}px`;

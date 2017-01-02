@@ -20,7 +20,7 @@
       </div>
       <div class="babble-title-right">
         <a class="language-selector"></a>
-        <button (click)="publishBabbles()" [disabled]="state.babbles.length === 0" class="btn btn-primary">Publish</button>
+        <button (click)="publishBabbles()" [disabled]="!editorDirty" class="btn btn-primary">Publish</button>
       </div>
     </div>
   </div>
@@ -55,9 +55,9 @@
                 (mouseup)="onWordMouseUp($event, wordObj, line.id, singleLine)" 
                 (mousedown)="onWordMouseDown($event, wordObj, line.id)"
                 class="word"
-                [class.selected]="isBabbleSelectedOnWord(selection, wordObj.id, line.id)"
-                [class.active]="isBabbleActiveOnWord(wordObj.id, line.id)">
-                <span *ngIf="isStartBabbleActiveOnWord(wordObj.id, line.id)" class="start-point"></span>
+                [class.selected]="isBabbleSelectedOnWord(selection, wordObj.id, wordObj.word, line.id)"
+                [class.active]="isBabbleActiveOnWord(wordObj.id, wordObj.word, line.id)">
+                <span *ngIf="isStartBabbleActiveOnWord(wordObj.id, wordObj.word, line.id)" class="start-point"></span>
                 {{wordObj.word}}
               </span>
             </div>
