@@ -93,7 +93,7 @@ export class AppComponent implements OnInit {
     return this.activeLanguageCode ? this.activeLanguageCode.toString() : null;
   }
 
-  activateLanguage(l: Language): void {
+  setActiveLanguage(l: Language): void {
     this.activeLanguageCode = l.languageCode;
   }
 
@@ -157,12 +157,14 @@ export class AppComponent implements OnInit {
       .map(res => res.text())
       .subscribe(res => {
         let text = res;
-        let words = text.split(' ');
+        let lines = text.split('\n');
+        let combinedLines = lines.join(' ');
+        let words = combinedLines.split(' ');
         
         words.forEach((w, index) => {
+          if(!w) return;
           let regex = /<time=[0-9]*\.[0-9]*>/ig;
           let results = w.match(regex);
-          
           let word = w.match(/>(.*)</)[1];
           let startTimeString = results[0].match(/[0-9]*\.[0-9]*/)[0];
           let endTimeString = results[1].match(/[0-9]*\.[0-9]*/)[0];
