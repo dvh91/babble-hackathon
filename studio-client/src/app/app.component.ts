@@ -34,6 +34,7 @@ export class AppComponent implements OnInit {
 
   public activeLanguageCode: KalturaLanguageCode;
   public state: AppState;
+  public filterState: string;
   public transcript: Array<any>;
   public currentTime: number;
   public selection: Selection;
@@ -49,6 +50,7 @@ export class AppComponent implements OnInit {
   private selectionEndXPosition: number;
   private selectionEndYPosition: number;
   private popoverActiveState: boolean;
+  private toast: boolean;
 
   constructor(
     private http: Http,
@@ -57,6 +59,7 @@ export class AppComponent implements OnInit {
     private httpConfiguration: KalturaHttpConfiguration) {
 
     this.assetId = '1_umer46fd';
+    this.filterState = '*';
     this.state = { characters: [], babbles: [] };
     this.transcript = [];
     this.languages = [];
@@ -296,8 +299,11 @@ export class AppComponent implements OnInit {
     let lineEndTime = this.srtTimeToSeconds(lineTimes[1]);
     words.forEach(wordObj => {
       wordObj.word
-      let foundWord = this.wordsAlignment.filter(w => {
-        return (w.start >= (lineStartTime - 0.5)) && (w.end <= (lineEndTime + 0.5)) && w.word === wordObj.word;
+      let wordsAlignment = this.wordsAlignment;
+      let foundWord = wordsAlignment.filter(w => {
+        return (w.start >= (lineStartTime - 0.5)) 
+          && (w.end <= (lineEndTime + 0.5)) 
+          && w.word.toLowerCase() === wordObj.word.toLowerCase();
       });
       if(foundWord.length > 0) {
         wordObj.start = foundWord[0].start;
@@ -308,7 +314,7 @@ export class AppComponent implements OnInit {
     });
   }
 
-  getMetadata() {
+  getMetadata(): void {
     const request = new MetadataListAction({
       filter: new KalturaMetadataFilter().setData(data => {
         data.objectIdEqual = this.assetId;
@@ -317,23 +323,22 @@ export class AppComponent implements OnInit {
     this.kalturaClient.request(request)
       .subscribe((res) => {
         let data = res.result.objects.map(metaData => metaData.xml);
-        console.log(data);
       });
   }
 
-  getCaptionLineTimes() {
+  getCaptionLineTimes(): Array<string> {
     let selectionLine = this.selection.line;
     let lineObj = this.transcript[this.activeLanguageCode.toString()].filter(line => line.id === selectionLine)[0];
 
     return [lineObj.startTime, lineObj.endTime];
   }
 
-  getSelectionSentence() {
+  getSelectionSentence(): string {
     let words = this.selection.words;
     return words.map(wordObj => wordObj.word).join(' ');
   }
 
-  cancelPopover() {
+  cancelPopover(): void {
     this.popoverActiveState = false;
     this.resetSelection();
   }
@@ -342,7 +347,7 @@ export class AppComponent implements OnInit {
     let babble: Selection = {
       words: this.selection.words,
       line: this.selection.line,
-      character: 0
+      character: 1
     };
     this.state.babbles.push(babble);
     this.resetSelection();
@@ -351,6 +356,10 @@ export class AppComponent implements OnInit {
 
   popoverActive(): boolean {
     return this.popoverActiveState;
+  }
+
+  getCharacter(id) {
+    return this.state.characters.filter(c => c.id === id)[0];
   }
 
   isBabbleSelectedOnWord(selection: Selection, wordId, lineId): boolean {
@@ -363,23 +372,28 @@ export class AppComponent implements OnInit {
     }).length > 0
   }
 
+  isStartBabbleActiveOnWord(wordId, lineId): boolean {
+    return this.isBabbleActiveOnWord(wordId, lineId) && !this.isBabbleActiveOnWord(wordId - 1, lineId);
+  }
+
   playSelectionAudio(languageCode) {
     this.kdp.sendNotification('switchAudioTrack', {index: languageCode });
     this.kdp.sendNotification('doSeek', this.selection.words[0].start);
-    this.kdp.kBind('playerUpdatePlayhead', (currentTime) => {
+    this.kdp.kBind('playerUpdatePlayhead.audio', (currentTime) => {
       if(currentTime >= this.selection.words[this.selection.words.length - 1].end + 0.1) {
         this.kdp.sendNotification('doPause');
+        this.kdp.kUnbind('.audio')
       }
     });
     this.kdp.sendNotification('doPlay');
   }
 
-  english() {
-    console.log('english');
+  jumpToCurrentLine(): void {
+    
   }
 
   filter(filter) {
-    console.log(filter);
+    this.filterState = filter;
   }
 
   publishBabbles() {
@@ -392,14 +406,20 @@ export class AppComponent implements OnInit {
     this.kalturaClient.request(request)
       .subscribe((res) => {
         this.state = JSON.parse(res.result.description);
+        this.showToast();
       });
+  }
+
+  showToast() {
+    this.toast = true;
+    setTimeout(() => this.toast = false, 2000);
   }
 
   private setInitialSelctionValue() {
     let selection: Selection = {
       words: [],
       line: -1,
-      character: -1
+      character: 1
     };
 
     return this.selection = selection;

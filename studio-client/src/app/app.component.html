@@ -1,91 +1,112 @@
-<div class="topbar">
-  <div><img src="assets/babble_white.png" height="27" alt=""></div>
-</div>
-<div class="babble-title">
-  <div class="container row">
-    <div class="babble-title-left">
-      <h1>{{media?.name}}</h1>
-      <div class="characters">
-        <img [src]="c.image" class="thumb-circle" *ngFor="let c of state.characters">
-        <a href="" class="thumb-circle">+</a>
-      </div>
+<div class="app">
+  <div class="topbar">
+    <div class="topbar-left">
+      <a>Open</a>
+      <a>Preferences</a>
     </div>
-    <div class="babble-title-right">
-      <a class="language-selector"></a>
-      <button (click)="publishBabbles()" [disabled]="state.babbles.length === 0" class="btn btn-primary">Publish</button>
+    <div class="topbar-logo"><img src="assets/babble_white.png" height="27" alt=""></div>
+    <div class="topbar-right">
+      <a>NEW BABBLE MOVIE</a>
     </div>
   </div>
-</div>
-<div class="container">
-  <div class="action-bar row">
-    <div class="tabs">
-      <a (click)="filter('*')" class="tab-item active">All transcript</a>
-      <a (click)="filter('suggestions')" class="tab-item">12 Suggestions</a>
-      <a (click)="filter('babbles')" class="tab-item">{{state.babbles.length}} Babbles</a>
+  <div class="babble-title">
+    <div class="container row">
+      <div class="babble-title-left">
+        <h1>{{media?.name}}</h1>
+        <div class="characters">
+          <img [src]="c.image" class="thumb-circle" *ngFor="let c of state.characters">
+          <a href="" class="thumb-circle">+</a>
+        </div>
+      </div>
+      <div class="babble-title-right">
+        <a class="language-selector"></a>
+        <button (click)="publishBabbles()" [disabled]="state.babbles.length === 0" class="btn btn-primary">Publish</button>
+      </div>
     </div>
-    <div class="jump">
-      <a href="">Jump to current</a>
+  </div>
+  <div class="container">
+    <div class="action-bar row">
+      <div class="tabs">
+        <a (click)="filter('*')" [class.active]="filterState === '*'" class="tab-item">All transcript</a>
+        <a (click)="filter('babbles')" [class.active]="filterState === 'babbles'" class="tab-item">{{state.babbles.length}} Babbles</a>
+        <a (click)="filter('suggestions')" [class.active]="filterState === 'suggestions'" class="tab-item">12 Suggestions</a>
+      </div>
+      <div class="jump">
+        <a (click)="jumpToCurrentLine()">Jump to current</a>
+      </div>
+    </div>
+
+    <div class="main-editor row">
+      <div class="transcript" *ngIf="!!getActiveLanguage()">
+        <div class="transcript-line" *ngFor="let line of (transcript[getActiveLanguage()] | transcript: state.babbles:filterState)">
+          <div class="transcript-line-icon">
+            <div *ngIf="isCurrentlyPlaying(line.startTime, line.endTime)">
+              <img src="assets/waveforms.gif" width="16" alt="">
+            </div>
+            <a *ngIf="!isCurrentlyPlaying(line.startTime, line.endTime)" class="btn btn-play" (click)="seekTo(line.startTime)"></a>
+          </div>
+          <div class="transcript-line-times">
+            <span (click)="seekTo(line.startTime)">{{srtTimeDisplay(line.startTime)}} - {{srtTimeDisplay(line.endTime)}}</span>
+          </div>
+          <div class="transcript-line-text">
+            <div *ngFor="let singleLine of line.content">
+              <span 
+                *ngFor="let wordObj of singleLine" 
+                (mouseup)="onWordMouseUp($event, wordObj, line.id, singleLine)" 
+                (mousedown)="onWordMouseDown($event, wordObj, line.id)"
+                class="word"
+                [class.selected]="isBabbleSelectedOnWord(selection, wordObj.id, line.id)"
+                [class.active]="isBabbleActiveOnWord(wordObj.id, line.id)">
+                <span *ngIf="isStartBabbleActiveOnWord(wordObj.id, line.id)" class="start-point"></span>
+                {{wordObj.word}}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="video-container">
+        <div class="ratio-maker">
+          <div class="video-holder" id="kaltura-player"></div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <div class="main-editor row">
-    <div class="transcript" *ngIf="!!getActiveLanguage()">
-      <div class="transcript-line" *ngFor="let line of transcript[getActiveLanguage()]">
-        <div class="transcript-line-icon">
-          <div *ngIf="isCurrentlyPlaying(line.startTime, line.endTime)">
-            <img src="assets/waveforms.gif" width="16" alt="">
-          </div>
-          <a *ngIf="!isCurrentlyPlaying(line.startTime, line.endTime)" class="btn btn-play" (click)="seekTo(line.startTime)"></a>
-        </div>
-        <div class="transcript-line-times">
-          <span (click)="seekTo(line.startTime)">{{srtTimeDisplay(line.startTime)}} - {{srtTimeDisplay(line.endTime)}}</span>
-        </div>
-        <div class="transcript-line-text">
-          <div *ngFor="let singleLine of line.content">
-            <span 
-              *ngFor="let wordObj of singleLine" 
-              (mouseup)="onWordMouseUp($event, wordObj, line.id, singleLine)" 
-              (mousedown)="onWordMouseDown($event, wordObj, line.id)"
-              class="word"
-              [class.selected]="isBabbleSelectedOnWord(selection, wordObj.id, line.id)"
-              [class.active]="isBabbleActiveOnWord(wordObj.id, line.id)">
-              {{wordObj.word}}
-            </span>
-          </div>
-        </div>
+  <div [class.active]="popoverActive()" class="babble-popover" #popover>
+    <div *ngIf="selection.words.length > 0">
+      <div class="babble-popover-header">
+        <img [src]="getCharacter(this.selection.character)?.image" class="babble-popover-header-thumb" alt="">
+        <p>"{{getSelectionSentence()}}"</p>
       </div>
-    </div>
-    <div class="video-container">
-      <div class="ratio-maker">
-        <div class="video-holder" id="kaltura-player"></div>
+      <div class="babble-popover-body">
+        <div class="language-play-btns">
+          <span class="language-play-btns-label">Play it</span>
+          <a (click)="playSelectionAudio(0)" class="language-play-btn">
+            <div class="btn btn-play"></div>
+            <span>French</span>
+          </a>
+          <a (click)="playSelectionAudio(1)" class="language-play-btn">
+            <div class="btn btn-play"></div>
+            <span>English</span>
+          </a>
+        </div>
+        <select class="select" ([ngModel])="selection.character">
+          <option disabled>Choose character</option>
+          <option *ngFor="let option of state.characters" [ngValue]="option.id">{{option.name}}</option>
+        </select>
       </div>
-      <div class="debug-block">
-        <p class="debug-block-title">DEBUGGING INFO</p>
-        <p>currentTime: {{currentTime}}</p>
-        <p>selection: {{selection | json}}</p>
-        <p>state: {{state | json}}</p>
-        <p>languages: {{languages | json}}</p>
+      <div class="babble-popover-footer">
+        <button [disabled]="false" (click)="addBabble()" class="btn btn-primary">
+          Create Babble
+        </button>
+        <a (click)="cancelPopover()" class="btn btn-link">Cancel</a>
       </div>
     </div>
   </div>
-</div>
 
-<div [class.active]="popoverActive()" class="babble-popover" #popover>
-  <div class="babble-popover-header">
-    <img src="http://vignette2.wikia.nocookie.net/lionking/images/0/02/Pumbaa_icons_by_shwz-d3fy8sf.png/revision/latest?cb=20120808023708" class="babble-popover-header-thumb" alt="">
-    <p>"{{getSelectionSentence()}}"</p>
-  </div>
-  <div class="babble-popover-body">
-    <a (click)="playSelectionAudio(0)" class="btn">french</a>
-    <a (click)="playSelectionAudio(1)" class="btn">english</a>
-    <select class="select">
-      <option *ngFor="let option of state.characters" value="">{{option.name}}</option>
-    </select>
-  </div>
-  <div class="babble-popover-footer">
-    <button [disabled]="false" (click)="addBabble()" class="btn btn-primary">
-      Create Babble
-    </button>
-    <a (click)="cancelPopover()" class="btn btn-link">Cancel</a>
+  <div class="toast-container" *ngIf="toast">
+    <div class="toast">
+      Successfully updated the entry babbles!
+    </div>
   </div>
 </div>
