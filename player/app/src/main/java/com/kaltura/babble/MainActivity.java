@@ -1,11 +1,14 @@
 package com.kaltura.babble;
 
+import android.graphics.drawable.Animatable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import java.util.Timer;
 import java.util.TimerTask;
@@ -46,6 +49,7 @@ public class MainActivity extends AppCompatActivity {
     private ImageView mBabbleSecondaryController;
     private ImageView mBabbleControllerButton;
     private ImageView mAtmosphereImage;
+    private ImageView mBabbleAnim;
 
 
     enum BabbleState {
@@ -74,6 +78,8 @@ public class MainActivity extends AppCompatActivity {
         mBabbleSecondaryController = (ImageView) findViewById(R.id.babble_secondary_controller);
         mBabbleControllerButton = (ImageView) findViewById(R.id.babble_controller_button);
         mAtmosphereImage = (ImageView) findViewById(R.id.atmosphere_image);
+
+        mBabbleAnim = (ImageView) findViewById(R.id.babble_anim);
 
 
         mBabbleControllerButton.setOnClickListener(new View.OnClickListener() {
@@ -263,9 +269,19 @@ public class MainActivity extends AppCompatActivity {
         }
 
 
-        mBabbleControllerBackground.setVisibility(toShow ? View.VISIBLE : View.INVISIBLE);
+        //mBabbleControllerBackground.setVisibility(/*toShow ? View.VISIBLE : */View.INVISIBLE);
         mBabbleControllerButton.setVisibility(toShow ? View.VISIBLE : View.INVISIBLE);
+        //mBabbleAnim.setVisibility(toShow ? View.VISIBLE : View.INVISIBLE);
 
+        if (toShow) {
+
+            Drawable drawable = getDrawable(R.drawable.babble_animation);
+            //mBabbleAnim.setImageDrawable(drawable);
+            mBabbleControllerButton.setBackground(drawable);
+
+            ((Animatable) drawable).start();
+
+        }
 
     }
 
