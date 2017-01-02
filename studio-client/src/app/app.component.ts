@@ -9,7 +9,8 @@ import { CaptionAssetListAction, CaptionAssetServeAction } from '@kaltura-ng2/ka
 import { MediaGetAction, MediaUpdateAction } from '@kaltura-ng2/kaltura-api/dist/services/media';
 import { FlavorAssetListAction, FlavorAssetGetUrlAction } from '@kaltura-ng2/kaltura-api/dist/services/flavor-asset';
 import { MetadataListAction } from '@kaltura-ng2/kaltura-api/dist/services/metadata';
-import { KalturaAssetFilter, KalturaMediaEntry, KalturaMetadataFilter } from '@kaltura-ng2/kaltura-api/dist/kaltura-types';
+import { KalturaAssetFilter, KalturaMediaEntry, KalturaMetadataFilter} from '@kaltura-ng2/kaltura-api/dist/kaltura-types';
+import { KalturaLanguageCode } from '@kaltura-ng2/kaltura-api/dist/kaltura-enums';
 
 import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/catch';
@@ -31,7 +32,7 @@ interface AppState { characters: Array<Character>, babbles: Array<Selection> }
 export class AppComponent implements OnInit {
   @ViewChild('popover') popover: any;
 
-  private assetId: string;
+  public activeLanguageCode: KalturaLanguageCode;
   public state: AppState;
   public transcript: Array<any>;
   public currentTime: number;
@@ -39,6 +40,7 @@ export class AppComponent implements OnInit {
   public media: KalturaMediaEntry;
   public languages: Array<Language>;
   public initialState: any;
+  private assetId: string;
   private downloadUrl: string;
   private kdp: any;
   private selectionStartXPosition: number;
@@ -83,6 +85,14 @@ export class AppComponent implements OnInit {
       });
   }
 
+  getActiveLanguage(): string {
+    return this.activeLanguageCode ? this.activeLanguageCode.toString() : null;
+  }
+
+  activateLanguage(l: Language): void {
+    this.activeLanguageCode = l.languageCode;
+  }
+
   seekTo(startTime) {
     let time = this.srtTimeToSeconds(startTime);
     this.kdp.sendNotification('doSeek', time);
@@ -100,25 +110,26 @@ export class AppComponent implements OnInit {
       .subscribe((res) => {
         this.languages = res.result.objects.map(captionAsset => {
           return {
-            language: captionAsset.language.toString(),
-            languageCode: captionAsset.languageCode.toString(),
-            isDefault: captionAsset.isDefault
+            language: captionAsset.language,
+            languageCode: captionAsset.languageCode,
+            isDefault: !!captionAsset.isDefault
           }
         });
+        this.activeLanguageCode = this.languages.filter(l => l.isDefault)[0].languageCode;
         res.result.objects.forEach(captionAsset => {
-          this.getCaptionContents(captionAsset.id);
+          this.getCaptionContents(captionAsset.id, captionAsset.languageCode);
         })
       });
   }
 
-  getCaptionContents(captionAssetId) {
+  getCaptionContents(captionAssetId, languageCode: KalturaLanguageCode) {
     const request = new CaptionAssetServeAction({
       captionAssetId: captionAssetId
     });
 
     this.kalturaClient.request(request)
       .subscribe((res) => {
-        this.transcript = this.formatSRT(res.result);
+        this.transcript[languageCode.toString()] = this.formatSRT(res.result);
       });
   }
 
@@ -270,7 +281,7 @@ export class AppComponent implements OnInit {
 
   getCaptionLineTimes() {
     let selectionLine = this.selection.line;
-    let lineObj = this.transcript.filter(line => line.id === selectionLine)[0];
+    let lineObj = this.transcript[this.activeLanguageCode.toString()].filter(line => line.id === selectionLine)[0];
 
     return [lineObj.startTime, lineObj.endTime];
   }
@@ -358,7 +369,7 @@ export class AppComponent implements OnInit {
 
   private formatSRT(data) {
     let text = data.toString();
-    let lines = text.split('\n');
+    let lines = text.split(/\r?\n/);
     let response = [];
 
     let output = [];
