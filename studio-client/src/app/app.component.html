@@ -90,9 +90,14 @@
             <span>English</span>
           </a>
         </div>
-        <select class="select" ([ngModel])="selection.character">
+        <select class="select" (change)="chooseCharacter($event.target.value)">
           <option disabled>Choose character</option>
-          <option *ngFor="let option of state.characters" [ngValue]="option.id">{{option.name}}</option>
+          <option 
+            *ngFor="let option of state.characters" 
+            [value]="option.id"
+            [selected]="option.id === selection.character">
+            {{option.name}}
+            </option>
         </select>
       </div>
       <div class="babble-popover-footer">

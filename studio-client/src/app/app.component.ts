@@ -415,6 +415,10 @@ export class AppComponent implements OnInit {
     setTimeout(() => this.toast = false, 2000);
   }
 
+  chooseCharacter(id) {
+    this.selection.character = parseInt(id);
+  }
+
   private setInitialSelctionValue() {
     let selection: Selection = {
       words: [],
