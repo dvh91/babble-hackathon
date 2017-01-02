@@ -6,7 +6,6 @@ import com.kaltura.babble.R;
 import com.kaltura.playkit.PKEvent;
 import com.kaltura.playkit.PKLog;
 import com.kaltura.playkit.Player;
-import com.kaltura.playkit.PlayerConfig;
 import com.kaltura.playkit.PlayerEvent;
 import com.kaltura.playkit.plugins.ads.AdEvent;
 import com.kaltura.playkit.plugins.ads.AdInfo;
@@ -17,7 +16,6 @@ import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import static com.kaltura.playkit.PKMediaEntry.MediaEntryType.Live;
 import static com.kaltura.playkit.PlayerEvent.Type.CAN_PLAY;
 import static com.kaltura.playkit.PlayerEvent.Type.ENDED;
 import static com.kaltura.playkit.PlayerEvent.Type.PAUSE;
@@ -40,11 +38,11 @@ public class PlayerControlsController implements PlayerControlsControllerInterfa
     private static final int FIFTEEN_MIN = 15 * 60 * 1000;
     private static final int FIFTEEN_SEC = 15 * 1000;
 
-    private Player mPlayer;
-    private PlayerConfig mPlayerConfig;
+    private Player mVideoPlayer;
+    private Player mBaseAudioPlayer;
     private Enum mPlayerState;
-    //private TracksController mTracksController;
     private PlayerControlsView mPlayerControlsView;
+
 
     private Timer mTimer;
     private UpdateProgressTask mUpdateProgressTask;
@@ -78,7 +76,7 @@ public class PlayerControlsController implements PlayerControlsControllerInterfa
 
         if (startTracking) {
 
-            if (mPlayer == null) { // don't start timer before player is ready
+            if (mVideoPlayer == null || mBaseAudioPlayer == null) { // don't start timer before player is ready
                 return;
             }
 
@@ -103,13 +101,16 @@ public class PlayerControlsController implements PlayerControlsControllerInterfa
 
 
     @Override
-    public void setPlayer(Player player, PlayerConfig playerConfig) {
-        mPlayer = player;
-        mPlayerConfig = playerConfig;
+    public void setPlayer(Player videoPlayer, Player baseAudioPlayer) {
+
+        mVideoPlayer = videoPlayer;
+        mBaseAudioPlayer = baseAudioPlayer;
 
         mPlayerState = null; // init player state
         setPlayerListeners();
     }
+
+
 
 
 
@@ -157,18 +158,11 @@ public class PlayerControlsController implements PlayerControlsControllerInterfa
     }
 
     private boolean isLiveAndNoDVR() {
-        return mPlayerConfig != null &&  mPlayerConfig.media.getMediaEntry() != null &&
-                mPlayerConfig.media.getMediaEntry().getMediaType() != null &&
-                mPlayerConfig.media.getMediaEntry().getMediaType().equals(Live) &&
-                mPlayer != null && mPlayer.getDuration() < FIFTEEN_MIN;
+        return false;
     }
 
     private boolean isLiveAndDVR() {
-
-        return mPlayerConfig != null && mPlayerConfig.media.getMediaEntry() != null &&
-               mPlayerConfig.media.getMediaEntry().getMediaType() != null &&
-               mPlayerConfig.media.getMediaEntry().getMediaType().equals(Live) &&
-               mPlayer != null && mPlayer.getDuration() >= FIFTEEN_MIN;
+        return false;
     }
 
     @Override
@@ -193,10 +187,10 @@ public class PlayerControlsController implements PlayerControlsControllerInterfa
         long position = 0;
         long bufferedPosition = 0;
 
-        if (mPlayer != null) {
-            duration = (mPlayer.getDuration() > 0) ? mPlayer.getDuration() : duration;
-            position = mPlayer.getCurrentPosition();
-            bufferedPosition = mPlayer.getBufferedPosition();
+        if (mVideoPlayer != null) {
+            duration = (mVideoPlayer.getDuration() > 0) ? mVideoPlayer.getDuration() : duration;
+            position = mVideoPlayer.getCurrentPosition();
+            bufferedPosition = mVideoPlayer.getBufferedPosition();
         }
 
 
@@ -218,19 +212,9 @@ public class PlayerControlsController implements PlayerControlsControllerInterfa
         StringBuilder timeIndicator = new StringBuilder();
         timeSeparator =  mPlayerControlsView.getContext().getString(R.string.time_indicator_separator);
 
-        if (mPlayerConfig != null && mPlayerConfig.media.getMediaEntry().getMediaType().equals(Live)) {
-            long distanceFromLive = duration - position;
-            log.d("distanceFromLive = " + distanceFromLive);
-            if (isLiveAndNoDVR() || distanceFromLive <= FIFTEEN_SEC) {
-                timeIndicator.append("Live");
-            } else if (isLiveAndDVR()){
-                timeIndicator.append(" -" + stringForTime(distanceFromLive) + "  Live");
-            }
-        } else {
-            timeIndicator.append(stringForTime(position));
-            timeIndicator.append(timeSeparator);
-            timeIndicator.append(stringForTime(duration));
-        }
+        timeIndicator.append(stringForTime(position));
+        timeIndicator.append(timeSeparator);
+        timeIndicator.append(stringForTime(duration));
 
         mPlayerControlsView.setTimeIndicator(timeIndicator.toString());
 
@@ -263,8 +247,8 @@ public class PlayerControlsController implements PlayerControlsControllerInterfa
     private long positionValue(long progress) {
         long positionValue = 0;
 
-        if (mPlayer != null) {
-            long duration = mPlayer.getDuration();
+        if (mVideoPlayer != null) {
+            long duration = mVideoPlayer.getDuration();
             positionValue = (duration * progress) / PROGRESS_BAR_MAX;
         }
 
@@ -309,19 +293,29 @@ public class PlayerControlsController implements PlayerControlsControllerInterfa
 
 
     private void togglePlayPauseReplay() {
+
         log.v("togglePlayPause mPlayerState = " + mPlayerState);
+
         if (isPlaybackEndedState()) {
+
             hideControls();
-            mPlayer.seekTo(0);
-            mPlayer.play();
+            mVideoPlayer.seekTo(0);
+            mBaseAudioPlayer.seekTo(0);
+            mVideoPlayer.play();
+            mBaseAudioPlayer.play();
             cleanAdData();
+
         } else if (mPlayerState == PLAYING || mPlayerState == AdEvent.Type.STARTED || mPlayerState == AdEvent.Type.RESUMED) {
 
             setControlsView(true);
-            mPlayer.pause();
+            mVideoPlayer.pause();
+            mBaseAudioPlayer.pause();
+
         } else if (mPlayerState == CAN_PLAY || mPlayerState == PAUSE || mPlayerState == AdEvent.Type.PAUSED) {
+
             setControlsView(false);
-            mPlayer.play();
+            mVideoPlayer.play();
+            mBaseAudioPlayer.play();
 
         }
     }
@@ -349,81 +343,78 @@ public class PlayerControlsController implements PlayerControlsControllerInterfa
 
     private void setPlayerListeners() {
 
-        mPlayer.addEventListener(new PKEvent.Listener() {
+        mVideoPlayer.addEventListener(new PKEvent.Listener() {
 
-            @Override
-            public void onEvent(PKEvent event) {
-                log.v("addEventListener " + event.eventType() + " mPlayerState = " + mPlayerState);
+                                     @Override
+                                     public void onEvent(PKEvent event) {
+                                         log.v("addEventListener " + event.eventType() + " mPlayerState = " + mPlayerState);
 
-                Enum receivedEventType = event.eventType();
+                                         Enum receivedEventType = event.eventType();
 
-                if (receivedEventType == CAN_PLAY) {
-                    if (!isAutoPlay()) {
-                        setControlsView(true);
-                    }
-                    setUpdateProgressTask(true);
-                } else if (receivedEventType == TRACKS_AVAILABLE) {
-                    if (isLiveAndDVR()) {
-                        mPlayer.seekTo(mPlayer.getDuration());
-                    }
-                } else if (receivedEventType == PLAYING) {
-                    if (mPlayer.getCurrentPosition() >= mPlayer.getDuration()) {
-                        showControlsWithPlay();
-                    } else {
-                        setControlsView(false);
-                    }
-                } else if (receivedEventType == ENDED) {
-                    if (!isPostrollAvailableInAdCuePoint()) {
-                        showControlsWithReplay();
-                    }
-                } else if (receivedEventType == AdEvent.Type.CUEPOINTS_CHANGED) {
-                    adCuePoints =  ((AdEvent.AdCuePointsUpdateEvent)event).cuePoints;
+                                         if (receivedEventType == CAN_PLAY) {
+                                             if (!isAutoPlay()) {
+                                                 setControlsView(true);
+                                             }
+                                             setUpdateProgressTask(true);
+                                         } else if (receivedEventType == TRACKS_AVAILABLE) {
+                                         } else if (receivedEventType == PLAYING) {
+                                             if (mVideoPlayer.getCurrentPosition() >= mVideoPlayer.getDuration()) {
+                                                 showControlsWithPlay();
+                                             } else {
+                                                 setControlsView(false);
+                                             }
+                                         } else if (receivedEventType == ENDED) {
+                                             if (!isPostrollAvailableInAdCuePoint()) {
+                                                 showControlsWithReplay();
+                                             }
+                                         } else if (receivedEventType == AdEvent.Type.CUEPOINTS_CHANGED) {
+                                             adCuePoints =  ((AdEvent.AdCuePointsUpdateEvent)event).cuePoints;
 
-                } else if (receivedEventType == AdEvent.Type.ALL_ADS_COMPLETED) {
-                    isAdDisplayed = false;
-                    allAdsCompeted = true;
-                    if (mPlayer.getCurrentPosition() >= mPlayer.getDuration()) {
-                        if (isPostrollAvailableInAdCuePoint()) {
-                            showControlsWithReplay();
-                        }
-                    }
-                } else if (receivedEventType == AdEvent.Type.CONTENT_PAUSE_REQUESTED) {
-                    mPlayerControlsView.setProgressBarVisibility(true);
-                    setControlsView(false);
-                } else if (receivedEventType == AdEvent.Type.STARTED) {
-                    adInfo = ((AdEvent.AdStartedEvent)event).adInfo;
+                                         } else if (receivedEventType == AdEvent.Type.ALL_ADS_COMPLETED) {
+                                             isAdDisplayed = false;
+                                             allAdsCompeted = true;
+                                             if (mVideoPlayer.getCurrentPosition() >= mVideoPlayer.getDuration()) {
+                                                 if (isPostrollAvailableInAdCuePoint()) {
+                                                     showControlsWithReplay();
+                                                 }
+                                             }
+                                         } else if (receivedEventType == AdEvent.Type.CONTENT_PAUSE_REQUESTED) {
+                                             mPlayerControlsView.setProgressBarVisibility(true);
+                                             setControlsView(false);
+                                         } else if (receivedEventType == AdEvent.Type.STARTED) {
+                                             adInfo = ((AdEvent.AdStartedEvent)event).adInfo;
 
-                    isAdDisplayed = true;
-                    allAdsCompeted = false;
-                    mPlayerControlsView.setProgressBarVisibility(false);
-                    mPlayerControlsView.setSeekBarMode(false);
-                    setControlsView(false);
-                } else if (receivedEventType == AdEvent.Type.TAPPED) {
-                    handleContainerClick();
-                } else if (receivedEventType == AdEvent.Type.COMPLETED) {
-                    mPlayerControlsView.setSeekBarMode(true);
-                    isAdDisplayed = false;
-                    if (adInfo != null) {
-                        if (adInfo.getAdPodPosition() ==  adInfo.getAdPodCount()) {
-                            adInfo = null;
-                        }
-                    }
-                }  else if (receivedEventType == AdEvent.Type.SKIPPED) {
-                    mPlayerControlsView.setSeekBarMode(true);
-                }
+                                             isAdDisplayed = true;
+                                             allAdsCompeted = false;
+                                             mPlayerControlsView.setProgressBarVisibility(false);
+                                             mPlayerControlsView.setSeekBarMode(false);
+                                             setControlsView(false);
+                                         } else if (receivedEventType == AdEvent.Type.TAPPED) {
+                                             handleContainerClick();
+                                         } else if (receivedEventType == AdEvent.Type.COMPLETED) {
+                                             mPlayerControlsView.setSeekBarMode(true);
+                                             isAdDisplayed = false;
+                                             if (adInfo != null) {
+                                                 if (adInfo.getAdPodPosition() ==  adInfo.getAdPodCount()) {
+                                                     adInfo = null;
+                                                 }
+                                             }
+                                         }  else if (receivedEventType == AdEvent.Type.SKIPPED) {
+                                             mPlayerControlsView.setSeekBarMode(true);
+                                         }
 
-                if (event instanceof PlayerEvent || receivedEventType == AdEvent.Type.PAUSED || receivedEventType == AdEvent.Type.RESUMED ||
-                        receivedEventType == AdEvent.Type.STARTED || (receivedEventType == AdEvent.Type.ALL_ADS_COMPLETED && isPostrollAvailableInAdCuePoint())) {
-                    mPlayerState = event.eventType();
-                }
-            }
-        }, PlayerEvent.Type.PLAY, PlayerEvent.Type.PAUSE, CAN_PLAY, PlayerEvent.Type.SEEKING, PlayerEvent.Type.SEEKED, PlayerEvent.Type.PLAYING,  PlayerEvent.Type.ENDED, PlayerEvent.Type.TRACKS_AVAILABLE,
+                                         if (event instanceof PlayerEvent || receivedEventType == AdEvent.Type.PAUSED || receivedEventType == AdEvent.Type.RESUMED ||
+                                                 receivedEventType == AdEvent.Type.STARTED || (receivedEventType == AdEvent.Type.ALL_ADS_COMPLETED && isPostrollAvailableInAdCuePoint())) {
+                                             mPlayerState = event.eventType();
+                                         }
+                                     }
+                                 }, PlayerEvent.Type.PLAY, PlayerEvent.Type.PAUSE, CAN_PLAY, PlayerEvent.Type.SEEKING, PlayerEvent.Type.SEEKED, PlayerEvent.Type.PLAYING,  PlayerEvent.Type.ENDED, PlayerEvent.Type.TRACKS_AVAILABLE,
 
-           AdEvent.Type.LOADED, AdEvent.Type.SKIPPED, AdEvent.Type.TAPPED, AdEvent.Type.CONTENT_PAUSE_REQUESTED, AdEvent.Type.CONTENT_RESUME_REQUESTED, AdEvent.Type.STARTED, AdEvent.Type.PAUSED, AdEvent.Type.RESUMED,
-           AdEvent.Type.COMPLETED, AdEvent.Type.ALL_ADS_COMPLETED, AdEvent.Type.CUEPOINTS_CHANGED);
+                AdEvent.Type.LOADED, AdEvent.Type.SKIPPED, AdEvent.Type.TAPPED, AdEvent.Type.CONTENT_PAUSE_REQUESTED, AdEvent.Type.CONTENT_RESUME_REQUESTED, AdEvent.Type.STARTED, AdEvent.Type.PAUSED, AdEvent.Type.RESUMED,
+                AdEvent.Type.COMPLETED, AdEvent.Type.ALL_ADS_COMPLETED,AdEvent.Type.CUEPOINTS_CHANGED);
 
 
-        mPlayer.addStateChangeListener(new PKEvent.Listener() {
+        mVideoPlayer.addStateChangeListener(new PKEvent.Listener() {
             @Override
             public void onEvent(PKEvent event) {
 
@@ -484,6 +475,7 @@ public class PlayerControlsController implements PlayerControlsControllerInterfa
     }
 
 
+
     private void handleScrubBarDragging(ControlsEvent.ButtonClickEvent buttonClickEvent, long position) {
 
         switch (buttonClickEvent) {
@@ -493,7 +485,7 @@ public class PlayerControlsController implements PlayerControlsControllerInterfa
                 break;
 
             case DRAGGING:
-                setTimeIndicator(positionValue(position), mPlayer.getDuration());
+                setTimeIndicator(positionValue(position), mVideoPlayer.getDuration());
                 break;
 
             case DRAGG_ENDED:
@@ -504,16 +496,15 @@ public class PlayerControlsController implements PlayerControlsControllerInterfa
     }
 
     private void seek(long position) {
-        if (mPlayer != null) {
-            mPlayer.seekTo(position);
+        if (mVideoPlayer != null && mBaseAudioPlayer != null) {
+            mVideoPlayer.seekTo(position);
+            mBaseAudioPlayer.seekTo(position);
         }
     }
 
     private void showMessage(int string) {
 
-        if (mPlayerControlsView != null) {
 
-        }
     }
 
     private void showControlsWithPlay() {
@@ -564,12 +555,12 @@ public class PlayerControlsController implements PlayerControlsControllerInterfa
 
 
     private boolean isPostrollAvailableInAdCuePoint() {
-       if (adCuePoints != null && adCuePoints.size() > 0) {
-           if (adCuePoints.get(adCuePoints.size() -1) < 0) {
-               return true;
-           }
-       }
-       return false;
+        if (adCuePoints != null && adCuePoints.size() > 0) {
+            if (adCuePoints.get(adCuePoints.size() -1) < 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
 

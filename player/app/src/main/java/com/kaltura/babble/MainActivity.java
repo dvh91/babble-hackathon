@@ -4,12 +4,15 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 
 import java.util.Timer;
 import java.util.TimerTask;
 
+import com.kaltura.babble.player.PlayerControlsController;
+import com.kaltura.babble.player.PlayerControlsView;
 import com.kaltura.playkit.PKEvent;
 import com.kaltura.playkit.Player;
 import com.kaltura.playkit.PlayerEvent;
@@ -18,7 +21,7 @@ import static com.kaltura.babble.MainActivity.BabbleState.MAIN_BABBLE;
 import static com.kaltura.babble.MainActivity.BabbleState.NONE;
 import static com.kaltura.babble.MainActivity.BabbleState.SECOND_BABBLE;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity  {
 
 
     public static final String TAG = "BABBLE_LOG";
@@ -31,17 +34,19 @@ public class MainActivity extends AppCompatActivity {
     private static final long PLAYER_INVALID_POSITION = -1;
 
 
-
+    private PlayerControlsController mPlayerControlsController;
     private boolean mInvokeBabbleListener;
     private BabbleState mBabblePlayingState;
+    PlayerControlsView mPlayerControlsView;
+    private LinearLayout mPlayerView;
     private Timer mTimer;
     private boolean mIsPaused;
     private long mPausedPosition;
 
-    private LinearLayout mPlayerContainer;
     private Player mVideoPlayer;
     private Player mBaseAudioPlayer;
     private Player mSecondAudioPlayer;
+    private FrameLayout mPlayerContainer;
 
     private UpdateProgressTask mUpdateProgressTask;
     private ImageView mBabbleControllerBackground;
@@ -70,11 +75,22 @@ public class MainActivity extends AppCompatActivity {
         mInvokeBabbleListener = false;
         mBabblePlayingState = NONE;
 
-        mPlayerContainer = (LinearLayout) findViewById(R.id.player_view);
+        mPlayerView = (LinearLayout) findViewById(R.id.player_view);
         mBabbleControllerBackground = (ImageView) findViewById(R.id.babble_controller_background);
         mBabbleOriginController = (ImageView) findViewById(R.id.babble_original_controller);
         mBabbleSecondaryController = (ImageView) findViewById(R.id.babble_secondary_controller);
         mBabbleControllerButton = (ImageView) findViewById(R.id.babble_controller_button);
+        mPlayerContainer = (FrameLayout) findViewById(R.id.player_container);
+        mPlayerView = (LinearLayout) findViewById(R.id.player_view);
+        mPlayerControlsView = (PlayerControlsView) findViewById(R.id.player_controls_view);
+
+        mPlayerControlsController = new PlayerControlsController(mPlayerControlsView);
+        mPlayerContainer.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mPlayerControlsController.handleContainerClick();
+            }
+        });
 
         mBabbleControllerButton.setOnClickListener(new View.OnClickListener() {
 
@@ -139,18 +155,46 @@ public class MainActivity extends AppCompatActivity {
                 mBaseAudioPlayer = baseAudioPlayer;
                 mSecondAudioPlayer = secondAudioPlayer;
 
-                mPlayerContainer.removeAllViews();
-                mPlayerContainer.addView(mVideoPlayer.getView());
+                mPlayerView.removeAllViews();
+                mPlayerView.addView(mVideoPlayer.getView());
 
 
                 mVideoPlayer.play();
                 mBaseAudioPlayer.play();
                 mSecondAudioPlayer.seekTo(BABBLE_START_TIME);
 
+
+                mPlayerControlsController.setPlayer(mVideoPlayer, mBaseAudioPlayer);
+                mPlayerControlsView.setVisibility(View.VISIBLE);
+
             }
 
 
         });
+
+    }
+
+
+    @Override
+    public void onResume() {
+
+        super.onResume();
+
+        if (mPlayerControlsController != null) {
+            mPlayerControlsController.onApplicationResumed();
+        }
+
+    }
+
+
+    @Override
+    public void onPause() {
+
+        super.onPause();
+
+        if (mPlayerControlsController != null) {
+            mPlayerControlsController.onApplicationPaused();
+        }
 
     }
 

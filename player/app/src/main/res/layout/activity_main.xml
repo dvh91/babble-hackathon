@@ -32,12 +32,11 @@
             android:layout_gravity="center_vertical"/>
 
 
-
         <com.kaltura.babble.player.PlayerControlsView
             android:id="@+id/player_controls_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:visibility="gone"/>
+            android:visibility="invisible"/>
 
     </FrameLayout>
 
