@@ -6,11 +6,14 @@
     <div class="babble-title-left">
       <h1>{{media?.name}}</h1>
       <div class="characters">
-        <img [src]="c.thumb" class="thumb-circle" *ngFor="let c of state.characters">
+        <img [src]="c.image" class="thumb-circle" *ngFor="let c of state.characters">
         <a href="" class="thumb-circle">+</a>
       </div>
     </div>
     <div class="babble-title-right">
+      <div>
+        <a (click)="activateLanguage(l)" *ngFor="let l of languages">{{l.language}}</a>
+      </div>
       <button (click)="publishBabbles()" [disabled]="state.babbles.length === 0" class="btn btn-primary">Publish</button>
     </div>
   </div>
@@ -28,8 +31,8 @@
   </div>
 
   <div class="main-editor row">
-    <div class="transcript">
-      <div class="transcript-line" *ngFor="let line of transcript">
+    <div class="transcript" *ngIf="!!getActiveLanguage()">
+      <div class="transcript-line" *ngFor="let line of transcript[getActiveLanguage()]">
         <div class="transcript-line-icon">
           <div *ngIf="isCurrentlyPlaying(line.startTime, line.endTime)">
             <img src="assets/waveforms.gif" width="16" alt="">
