@@ -27,11 +27,15 @@ public class MainActivity extends AppCompatActivity  {
     public static final String TAG = "BABBLE_LOG";
 
 
-    public static final long MEDIA_START_POSITION = 18;
-    private static final long BABBLE_START_TIME = 24740;
-    private static final long BABBLE_END_TIME = 28900;
+    //public static final long MEDIA_START_POSITION = 18;
+    public static final long MEDIA_START_POSITION = 36;
+    //private static final long BABBLE_START_TIME = 24740;
+    //private static final long BABBLE_END_TIME = 28900;
+    private static final long BABBLE_START_TIME = 49070;
+    private static final long BABBLE_END_TIME = 49500;
     private static final long BABBLE_APPEARANCE_INTERVAL = 3000;
     private static final long PLAYER_INVALID_POSITION = -1;
+    private static final long LONG_EQUALS = 15;
 
 
     private PlayerControlsController mPlayerControlsController;
@@ -88,7 +92,11 @@ public class MainActivity extends AppCompatActivity  {
         mPlayerContainer.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                mPlayerControlsController.handleContainerClick();
+
+                if (!mInvokeBabbleListener) {
+                    mPlayerControlsController.handleContainerClick();
+                }
+
             }
         });
 
@@ -114,7 +122,7 @@ public class MainActivity extends AppCompatActivity  {
 
             @Override
             public void onClick(View view) {
-                playBabble(MAIN_BABBLE);
+                handleHandleBabbleClick(mBabbleOriginController, MAIN_BABBLE);
             }
         });
 
@@ -123,7 +131,7 @@ public class MainActivity extends AppCompatActivity  {
 
             @Override
             public void onClick(View view) {
-                playBabble(SECOND_BABBLE);
+                handleHandleBabbleClick(mBabbleSecondaryController, SECOND_BABBLE);
             }
         });
 
@@ -135,11 +143,25 @@ public class MainActivity extends AppCompatActivity  {
     }
 
 
+    private void handleHandleBabbleClick(ImageView imageView, BabbleState babblePlayingState) {
+
+
+        imageView.getLayoutParams().width = 100;
+        imageView.getLayoutParams().height = 100;
+
+
+        playBabble(babblePlayingState);
+
+
+
+    }
+
+
     private void initPLayers() {
 
 
         PlayerProvider playerProvider = new PlayerProvider();
-        playerProvider.getPlayer("wait_to_be_king", MainActivity.this, new PlayerProvider.OnPlayerReadyListener() {
+        playerProvider.getPlayer("hakona_matata", MainActivity.this, new PlayerProvider.OnPlayerReadyListener() {
 
 
             @Override
@@ -159,8 +181,20 @@ public class MainActivity extends AppCompatActivity  {
                 mPlayerView.addView(mVideoPlayer.getView());
 
 
-                mVideoPlayer.play();
-                mBaseAudioPlayer.play();
+                mVideoPlayer.addEventListener(new PKEvent.Listener() {
+
+                    @Override
+                    public void onEvent(PKEvent event) {
+
+                        mVideoPlayer.play();
+                        mBaseAudioPlayer.play();
+
+                    }
+
+                }, PlayerEvent.Type.CAN_PLAY);
+
+
+
                 mSecondAudioPlayer.seekTo(BABBLE_START_TIME);
 
 
@@ -222,7 +256,7 @@ public class MainActivity extends AppCompatActivity  {
 
     private void babbleListener(long position) {
 
-        boolean endBabble = Math.abs(BABBLE_END_TIME - position) < 10;
+        boolean endBabble = Math.abs(BABBLE_END_TIME - position) < LONG_EQUALS;
 
         if (endBabble) {
 
@@ -345,10 +379,10 @@ public class MainActivity extends AppCompatActivity  {
 
     private void switchAudio(long position) {
 
-        boolean enterBabble = Math.abs(BABBLE_START_TIME - BABBLE_APPEARANCE_INTERVAL - position) < 10;
-        boolean startSwitch = Math.abs(BABBLE_START_TIME - position) < 10;
-        boolean endSwitch = Math.abs(BABBLE_END_TIME - position) < 10;
-        boolean exitBabble = Math.abs(BABBLE_END_TIME + BABBLE_APPEARANCE_INTERVAL - position) < 10;
+        boolean enterBabble = Math.abs(BABBLE_START_TIME - BABBLE_APPEARANCE_INTERVAL - position) < LONG_EQUALS;
+        boolean startSwitch = Math.abs(BABBLE_START_TIME - position) < LONG_EQUALS;
+        boolean endSwitch = Math.abs(BABBLE_END_TIME - position) < LONG_EQUALS;
+        boolean exitBabble = Math.abs(BABBLE_END_TIME + BABBLE_APPEARANCE_INTERVAL - position) < LONG_EQUALS;
 
 
         if (enterBabble) {

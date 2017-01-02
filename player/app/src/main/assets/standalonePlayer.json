@@ -29,10 +29,10 @@
 
 
   "hakona_matata": {
-    "duration": 257000,
+    "duration": 239000,
     "sources": [
       {
-        "url": "http://cdnapi.kaltura.com/p/1914121/sp/191412100/playManifest/entryId/1_pc8wuugd/flavorIds/1_9aojmpdl,1_kudv72fs,1_0fvusg10/format/applehttp/protocol/http/a.m3u8"
+        "url": "http://kalhlspd-a.akamaihd.net/dasha/p/1914121/sp/191412100/serveFlavor/entryId/1_umer46fd/v/1/flavorId/1_,lxc99jgf,9nzxkm5l,rb5ydu9m,xq469tw7,hc31o4hy,maemnfyx,/forceproxy/true/name/a.mp4.urlset/manifest.mpd"
       }
     ]
   },

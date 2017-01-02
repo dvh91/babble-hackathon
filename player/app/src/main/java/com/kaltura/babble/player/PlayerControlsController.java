@@ -33,7 +33,7 @@ public class PlayerControlsController implements PlayerControlsControllerInterfa
 
     private static final int UPDATE_TIME_INTERVAL = 300;
     private static final int PROGRESS_BAR_MAX = 100;
-    private static final int REMOVE_CONTROLS_TIMEOUT = 3250;
+    private static final int REMOVE_CONTROLS_TIMEOUT = 5000;
 
     private static final int FIFTEEN_MIN = 15 * 60 * 1000;
     private static final int FIFTEEN_SEC = 15 * 1000;
@@ -126,25 +126,24 @@ public class PlayerControlsController implements PlayerControlsControllerInterfa
         // toggle visibility
 
         mPlayerControlsView.setControlsVisibility(!isControlsVisible);
-        if (adInfo != null) {
-            if (adInfo.getAdPodPosition() < adInfo.getAdPodCount()) {
-                mPlayerControlsView.setSeekBarMode(false);
-            }
-        }
-        if (isLiveAndNoDVR()) {
-            mPlayerControlsView.setSeekBarVisibility(false);
-        } else {
-            mPlayerControlsView.setSeekBarVisibility(true);
-        }
-        if (isControlsVisible) {
-            if (mPlayerState != SEEKING) {
-                mPlayerControlsView.setPlayPauseVisibility(false, false);
-            }
-        } else {
-            // show pause button if currently playing
-            mPlayerControlsView.setPlayPauseVisibility(true, !(mPlayerState == PLAYING || mPlayerState == AdEvent.Type.STARTED || mPlayerState == AdEvent.Type.RESUMED));
 
+
+        mPlayerControlsView.setSeekBarVisibility(true);
+
+
+        if (isControlsVisible) {
+
+            mPlayerControlsView.setPlayPauseVisibility(false, false);
+
+        } else {
+
+            if (mVideoPlayer.isPlaying()) {
+                mPlayerControlsView.setPlayPauseVisibility(true, false);
+            } else {
+                mPlayerControlsView.setPlayPauseVisibility(true, true);
+            }
         }
+
 
         new Handler().postDelayed(new Runnable() {
             @Override
@@ -258,15 +257,6 @@ public class PlayerControlsController implements PlayerControlsControllerInterfa
     @Override
     public void onApplicationResumed() {
         setUpdateProgressTask(true);
-        if (isAdDisplayed) {
-            showControlsWithPlay();
-        } else {
-            mPlayerControlsView.setSeekBarMode(true);
-            if (!isPlaybackEndedState()) {
-                showControlsWithPlay();
-            }
-        }
-
     }
 
     private boolean isPlaybackEndedState() {
@@ -352,9 +342,6 @@ public class PlayerControlsController implements PlayerControlsControllerInterfa
                                          Enum receivedEventType = event.eventType();
 
                                          if (receivedEventType == CAN_PLAY) {
-                                             if (!isAutoPlay()) {
-                                                 setControlsView(true);
-                                             }
                                              setUpdateProgressTask(true);
                                          } else if (receivedEventType == TRACKS_AVAILABLE) {
                                          } else if (receivedEventType == PLAYING) {
@@ -453,7 +440,7 @@ public class PlayerControlsController implements PlayerControlsControllerInterfa
         switch (buttonClickEvent) {
 
             case SELECT_TRACKS_DIALOG:
-                mPlayerControlsView.toggleControlsVisibility(false);
+                //mPlayerControlsView.toggleControlsVisibility(false);
                 break;
 
             case BACK_BUTTON:

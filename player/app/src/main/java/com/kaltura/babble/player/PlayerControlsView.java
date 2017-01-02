@@ -116,7 +116,7 @@ public class PlayerControlsView extends FrameLayout {
             if (isEnded) {
                 mPlayPause.setImageResource(R.drawable.replay);
             } else if (toShowPlayView) {
-                mPlayPause.setImageResource(R.drawable.play);
+                mPlayPause.setImageResource(R.drawable.play_button);
             } else {
                 mPlayPause.setImageResource(R.drawable.pause);
             }
