@@ -86,6 +86,14 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
+        mBabbleControllerBackground.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                handleBabbleControllerClick();
+            }
+        });
+
+
         mBabbleOriginController.setOnClickListener(new View.OnClickListener() {
 
             @Override
@@ -195,6 +203,7 @@ public class MainActivity extends AppCompatActivity {
         mBabbleOriginController.setClickable(isClickable);
         mBabbleSecondaryController.setClickable(isClickable);
         mBabbleControllerButton.setClickable(isClickable);
+        mBabbleControllerBackground.setClickable(isClickable);
     }
 
 
@@ -239,7 +248,7 @@ public class MainActivity extends AppCompatActivity {
             setBabbles();
 
             setBabbleController(true, true);
-            //mAtmosphereImage.setVisibility(View.VISIBLE);
+            mAtmosphereImage.setVisibility(View.VISIBLE);
             mBabbleOriginController.setVisibility(View.VISIBLE);
             mBabbleSecondaryController.setVisibility(View.VISIBLE);
 
@@ -254,18 +263,23 @@ public class MainActivity extends AppCompatActivity {
 
         if (play) {
 
-            mBabbleControllerButton.setImageResource(R.drawable.play_ic);
+            if (toShow) {
+                mBabbleControllerBackground.setVisibility(View.VISIBLE);
+                mBabbleControllerButton.setVisibility(View.INVISIBLE);
+
+            } else {
+                mBabbleControllerBackground.setVisibility(View.INVISIBLE);
+                mBabbleControllerButton.setVisibility(View.INVISIBLE);
+            }
+
 
         } else {
 
             mBabbleControllerButton.setImageResource(R.drawable.pumbaa);
+            mBabbleControllerBackground.setVisibility(toShow ? View.VISIBLE : View.INVISIBLE);
+            mBabbleControllerButton.setVisibility(toShow ? View.VISIBLE : View.INVISIBLE);
 
         }
-
-
-        mBabbleControllerBackground.setVisibility(toShow ? View.VISIBLE : View.INVISIBLE);
-        mBabbleControllerButton.setVisibility(toShow ? View.VISIBLE : View.INVISIBLE);
-
 
     }
 

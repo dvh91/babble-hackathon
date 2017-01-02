@@ -6,7 +6,8 @@
     android:id="@+id/activity_main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.kaltura.babble.MainActivity">
+    tools:context="com.kaltura.babble.MainActivity"
+    android:background="@android:color/black">
 
 
     <FrameLayout
