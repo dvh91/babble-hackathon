@@ -36,11 +36,11 @@ public class MainActivity extends AppCompatActivity  {
     //private static final long BABBLE_START_TIME = 24740;
     //private static final long BABBLE_END_TIME = 28900;
 
-    //public static final long MEDIA_START_POSITION = 30;
-    public static final long MEDIA_START_POSITION = 45;
+    public static final long MEDIA_START_POSITION = 30;
     private static final long BABBLE_START_TIME = 49070;
     private static final long BABBLE_END_TIME = 49500;
     private static final long BABBLE_APPEARANCE_INTERVAL = 3000;
+    private static final long BABBLE_EXIT_INTERVAL = 9000;
     private static final long PLAYER_INVALID_POSITION = -1;
     private static final long LONG_EQUALS = 15;
 
@@ -68,6 +68,7 @@ public class MainActivity extends AppCompatActivity  {
     private ImageView mBabbleControllerButton;
     private ImageView mBabbleProtection;
     private ImageView mBabbleRipple;
+    private ImageView mBabbleMask;
     private TextView mOriginalControllerBabbleTriangle;
     private TextView mSecondControllerBabbleTriangle;
     private TextView mControllerBabbleTriangle;
@@ -103,6 +104,7 @@ public class MainActivity extends AppCompatActivity  {
         mPlayerControlsView = (PlayerControlsView) findViewById(R.id.player_controls_view);
         mBabbleProtection = (ImageView) findViewById(R.id.babble_protection);
         mBabbleRipple = (ImageView) findViewById(R.id.babble_ripple);
+        mBabbleMask = (ImageView) findViewById(R.id.babble_mask);
         mOriginalControllerBabbleTriangle = (TextView) findViewById(R.id.babble_original_triangle);
         mSecondControllerBabbleTriangle = (TextView) findViewById(R.id.babble_secondary_triangle);
         mControllerBabbleTriangle = (TextView) findViewById(R.id.babble_controller_triangle);
@@ -150,7 +152,6 @@ public class MainActivity extends AppCompatActivity  {
 
 
         setBabbleRippleAnimation();
-
 
         initPLayers();
         setUpdateProgressTask(true);
@@ -280,6 +281,54 @@ public class MainActivity extends AppCompatActivity  {
 
         mBabbleRippleAnimator.playTogether(animX, animY, alpha);
         mBabbleRippleAnimator.setDuration(700);
+
+    }
+
+
+    private void babbleFlingAnimation() {
+
+        AnimatorSet flingSet = new AnimatorSet();
+
+
+        AnimatorSet upSet = new AnimatorSet();
+        ObjectAnimator animUp = ObjectAnimator.ofFloat(mBabbleMask, "translationY", 100f, 0f);
+        ObjectAnimator avatarTransparent = ObjectAnimator.ofFloat(mBabbleControllerButton, "alpha", 0f, 0f);
+        upSet.playTogether(animUp, avatarTransparent);
+        upSet.setDuration(600);
+
+
+        AnimatorSet scale = new AnimatorSet();
+        ObjectAnimator scaleX = ObjectAnimator.ofFloat(mBabbleMask, "scaleX", 1f, 3f);
+        ObjectAnimator scaleY = ObjectAnimator.ofFloat(mBabbleMask, "scaleY", 1f, 3f);
+        ObjectAnimator alpha = ObjectAnimator.ofFloat(mBabbleMask, "alpha", 1f, 0f);
+
+        ObjectAnimator avatarX = ObjectAnimator.ofFloat(mBabbleControllerButton, "scaleX", 0.3f, 1f);
+        ObjectAnimator avatarY = ObjectAnimator.ofFloat(mBabbleControllerButton, "scaleY", 0.3f, 1f);
+        ObjectAnimator avatarAlpha = ObjectAnimator.ofFloat(mBabbleControllerButton, "alpha", 0f, 1f);
+
+        scale.playTogether(scaleX, scaleY, alpha, avatarX, avatarY, avatarAlpha);
+        scale.setDuration(500);
+
+        flingSet.play(upSet).before(scale);
+
+        mBabbleMask.setVisibility(View.VISIBLE);
+        setBabbleController(true, false);
+
+        flingSet.start();
+
+
+        flingSet.addListener(new AnimatorListenerAdapter() {
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+
+                mBabbleMask.setVisibility(View.INVISIBLE);
+
+                babbleRippleAnimation(true);
+
+            }
+
+        });
 
     }
 
@@ -511,12 +560,11 @@ public class MainActivity extends AppCompatActivity  {
         boolean enterBabble = Math.abs(BABBLE_START_TIME - BABBLE_APPEARANCE_INTERVAL - position) < LONG_EQUALS;
         boolean startSwitch = Math.abs(BABBLE_START_TIME - position) < LONG_EQUALS;
         boolean endSwitch = Math.abs(BABBLE_END_TIME - position) < LONG_EQUALS;
-        boolean exitBabble = Math.abs(BABBLE_END_TIME + BABBLE_APPEARANCE_INTERVAL - position) < LONG_EQUALS;
+        boolean exitBabble = Math.abs(BABBLE_END_TIME + BABBLE_EXIT_INTERVAL - position) < LONG_EQUALS;
 
 
         if (enterBabble) {
-            setBabbleController(true, false);
-            babbleRippleAnimation(true);
+            babbleFlingAnimation();
         }
 
 
