@@ -191,6 +191,17 @@ a, a:hover {
             &:hover {
                 color: #203A35;
             }
+
+            .dot {
+                width: 8px;
+                height: 8px;
+                background-color: rgba(56, 117, 252, 1);
+                border-radius: 4px;
+                display: inline-block;
+                vertical-align: middle;
+                position: relative;
+                margin-right: 10px;
+            }
         }
         .tab-item.active {
             color: #203A35;
@@ -207,8 +218,13 @@ a, a:hover {
         }
     }
     .jump {
-        padding: 16px 0;
+        background-image: url('assets/pin.png');
+        background-repeat: no-repeat;
+        background-position: left center;
+        background-size: 16px;
+        padding: 16px 0 16px 25px;
         float: right;
+        cursor: pointer;
         
         a {
             color: #3875FC;

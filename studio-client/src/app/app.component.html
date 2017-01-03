@@ -28,7 +28,7 @@
     <div class="action-bar row">
       <div class="tabs">
         <a (click)="filter('*')" [class.active]="filterState === '*'" class="tab-item">All transcript</a>
-        <a (click)="filter('babbles')" [class.active]="filterState === 'babbles'" class="tab-item">{{state.babbles.length}} Babbles</a>
+        <a (click)="filter('babbles')" [class.active]="filterState === 'babbles'" class="tab-item"><span class="dot"></span>{{state.babbles.length}} Babbles</a>
         <a (click)="filter('suggestions')" [class.active]="filterState === 'suggestions'" class="tab-item">12 Suggestions</a>
       </div>
       <div class="jump">
