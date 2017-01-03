@@ -70,6 +70,7 @@ public class MainActivity extends AppCompatActivity  {
     private ImageView mBabbleRipple;
     private TextView mOriginalControllerBabbleTriangle;
     private TextView mSecondControllerBabbleTriangle;
+    private TextView mControllerBabbleTriangle;
     private AnimatorSet mBabbleRippleAnimator;
 
 
@@ -104,6 +105,7 @@ public class MainActivity extends AppCompatActivity  {
         mBabbleRipple = (ImageView) findViewById(R.id.babble_ripple);
         mOriginalControllerBabbleTriangle = (TextView) findViewById(R.id.babble_original_triangle);
         mSecondControllerBabbleTriangle = (TextView) findViewById(R.id.babble_secondary_triangle);
+        mControllerBabbleTriangle = (TextView) findViewById(R.id.babble_controller_triangle);
 
         mPlayerControlsController = new PlayerControlsController(mPlayerControlsView);
         mPlayerContainer.setOnClickListener(new View.OnClickListener() {
@@ -309,6 +311,7 @@ public class MainActivity extends AppCompatActivity  {
         final TextView view;
         final String phrase;
 
+
         switch (babbleState) {
 
             case MAIN_BABBLE:
@@ -323,16 +326,13 @@ public class MainActivity extends AppCompatActivity  {
                 phrase = BABBLE_SECONDARY_PHRASE;
                 break;
 
-            default:
-                view = null;
-                phrase = null;
+            default: // main babble controller
+                view = mControllerBabbleTriangle;
+                phrase = BABBLE_SECONDARY_PHRASE;
                 break;
 
         }
 
-        if (view == null) {
-            return;
-        }
 
         ObjectAnimator anim = ObjectAnimator.ofFloat(view, "scaleX", 0f, 1f);
         anim.setDuration(150);
@@ -418,7 +418,6 @@ public class MainActivity extends AppCompatActivity  {
         mBabbleOriginController.setClickable(isClickable);
         mBabbleSecondaryController.setClickable(isClickable);
         mBabbleControllerButton.setClickable(isClickable);
-        //mBabbleControllerBackground.setClickable(isClickable);
     }
 
 
@@ -485,6 +484,7 @@ public class MainActivity extends AppCompatActivity  {
             mBabbleProtection.setVisibility(View.VISIBLE);
             mBabbleOriginController.setVisibility(View.VISIBLE);
             mBabbleSecondaryController.setVisibility(View.VISIBLE);
+            mControllerBabbleTriangle.setVisibility(View.INVISIBLE);
 
         }
 
@@ -521,6 +521,8 @@ public class MainActivity extends AppCompatActivity  {
 
 
         if (startSwitch) {
+
+            rectangleAnimation(NONE); // NONE is main babble controller
 
             mBaseAudioPlayer.setVolume(0);
             mSecondAudioPlayer.play();
