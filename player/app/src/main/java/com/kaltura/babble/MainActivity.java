@@ -2,6 +2,7 @@ package com.kaltura.babble;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
+import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -62,12 +63,14 @@ public class MainActivity extends AppCompatActivity  {
     private FrameLayout mPlayerContainer;
 
     private UpdateProgressTask mUpdateProgressTask;
-    private ImageView mBabbleControllerBackground;
     private ImageView mBabbleOriginController;
     private ImageView mBabbleSecondaryController;
     private ImageView mBabbleControllerButton;
     private ImageView mBabbleProtection;
-    private TextView mControllerBabbleTriangle;
+    private ImageView mBabbleRipple;
+    private TextView mOriginalControllerBabbleTriangle;
+    private TextView mSecondControllerBabbleTriangle;
+    private AnimatorSet mBabbleRippleAnimator;
 
 
     enum BabbleState {
@@ -91,7 +94,6 @@ public class MainActivity extends AppCompatActivity  {
         mBabblePlayingState = NONE;
 
         mPlayerView = (LinearLayout) findViewById(R.id.player_view);
-        mBabbleControllerBackground = (ImageView) findViewById(R.id.babble_controller_background);
         mBabbleOriginController = (ImageView) findViewById(R.id.babble_original_controller);
         mBabbleSecondaryController = (ImageView) findViewById(R.id.babble_secondary_controller);
         mBabbleControllerButton = (ImageView) findViewById(R.id.babble_controller_button);
@@ -99,7 +101,9 @@ public class MainActivity extends AppCompatActivity  {
         mPlayerView = (LinearLayout) findViewById(R.id.player_view);
         mPlayerControlsView = (PlayerControlsView) findViewById(R.id.player_controls_view);
         mBabbleProtection = (ImageView) findViewById(R.id.babble_protection);
-        mControllerBabbleTriangle = (TextView) findViewById(R.id.babble_triangle);
+        mBabbleRipple = (ImageView) findViewById(R.id.babble_ripple);
+        mOriginalControllerBabbleTriangle = (TextView) findViewById(R.id.babble_original_triangle);
+        mSecondControllerBabbleTriangle = (TextView) findViewById(R.id.babble_secondary_triangle);
 
         mPlayerControlsController = new PlayerControlsController(mPlayerControlsView);
         mPlayerContainer.setOnClickListener(new View.OnClickListener() {
@@ -123,13 +127,6 @@ public class MainActivity extends AppCompatActivity  {
         });
 
 
-        mBabbleControllerBackground.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                handleBabbleControllerClick();
-            }
-        });
-
 
         mBabbleOriginController.setOnClickListener(new View.OnClickListener() {
 
@@ -150,6 +147,9 @@ public class MainActivity extends AppCompatActivity  {
 
 
 
+        setBabbleRippleAnimation();
+
+
         initPLayers();
         setUpdateProgressTask(true);
 
@@ -158,15 +158,15 @@ public class MainActivity extends AppCompatActivity  {
 
     private void handleBabbleClick(final ImageView imageView, BabbleState babblePlayingState) {
 
-        viewScaleAnimation(imageView);
-        rectangleAnim();
+        buttonClickAnimation(imageView);
+        rectangleAnimation(babblePlayingState);
 
         playBabble(babblePlayingState);
 
     }
 
 
-    private void viewScaleAnimation(final View view) {
+    private void buttonClickAnimation(final View view) {
 
         float scalingFactor = 1.25f;
         view.setScaleX(scalingFactor);
@@ -183,7 +183,7 @@ public class MainActivity extends AppCompatActivity  {
 
             }
 
-        }, 250);
+        }, 400);
     }
 
 
@@ -264,12 +264,80 @@ public class MainActivity extends AppCompatActivity  {
     }
 
 
-    private void rectangleAnim() {
+    private void setBabbleRippleAnimation() {
 
-        ObjectAnimator anim = ObjectAnimator.ofFloat(mControllerBabbleTriangle, "scaleX", 0f, 1f);
+        ObjectAnimator animX = ObjectAnimator.ofFloat(mBabbleRipple, "scaleX", 1f, 1.5f);
+        ObjectAnimator animY = ObjectAnimator.ofFloat(mBabbleRipple, "scaleY", 1f, 1.5f);
+        ObjectAnimator alpha = ObjectAnimator.ofFloat(mBabbleRipple, "alpha", 1f, 0f);
+
+        setRepeat(animX);
+        setRepeat(animY);
+        setRepeat(alpha);
+
+        mBabbleRippleAnimator = new AnimatorSet();
+
+        mBabbleRippleAnimator.playTogether(animX, animY, alpha);
+        mBabbleRippleAnimator.setDuration(700);
+
+    }
+
+    private void babbleRippleAnimation(boolean toShow) {
+
+        if (toShow) {
+
+            mBabbleRippleAnimator.start();
+            mBabbleRipple.setVisibility(View.VISIBLE);
+
+        } else  {
+
+            mBabbleRipple.setVisibility(View.INVISIBLE);
+            mBabbleRippleAnimator.cancel();
+
+        }
+
+    }
+
+
+    private void setRepeat(ObjectAnimator animator) {
+        animator.setRepeatMode(ObjectAnimator.RESTART);
+        animator.setRepeatCount(ObjectAnimator.INFINITE);
+    }
+
+
+    private void rectangleAnimation(BabbleState babbleState) {
+
+        final TextView view;
+        final String phrase;
+
+        switch (babbleState) {
+
+            case MAIN_BABBLE:
+                mSecondControllerBabbleTriangle.setVisibility(View.INVISIBLE);
+                view = mOriginalControllerBabbleTriangle;
+                phrase = BABBLE_ORIGIN_PHRASE;
+                break;
+
+            case SECOND_BABBLE:
+                mOriginalControllerBabbleTriangle.setVisibility(View.INVISIBLE);
+                view = mSecondControllerBabbleTriangle;
+                phrase = BABBLE_SECONDARY_PHRASE;
+                break;
+
+            default:
+                view = null;
+                phrase = null;
+                break;
+
+        }
+
+        if (view == null) {
+            return;
+        }
+
+        ObjectAnimator anim = ObjectAnimator.ofFloat(view, "scaleX", 0f, 1f);
         anim.setDuration(150);
-        mControllerBabbleTriangle.setText("");
-        mControllerBabbleTriangle.setVisibility(View.VISIBLE);
+        view.setText("");
+        view.setVisibility(View.VISIBLE);
         anim.start();
 
         anim.addListener(new AnimatorListenerAdapter() {
@@ -277,23 +345,21 @@ public class MainActivity extends AppCompatActivity  {
             @Override
             public void onAnimationEnd(Animator animation) {
 
-                mControllerBabbleTriangle.setText(BABBLE_ORIGIN_PHRASE);
+                view.setText(phrase);
 
-                mControllerBabbleTriangle.postDelayed(new Runnable() {
+                view.postDelayed(new Runnable() {
 
                     @Override
                     public void run() {
 
-                        mControllerBabbleTriangle.setText("");
-                        ObjectAnimator anim = ObjectAnimator.ofFloat(mControllerBabbleTriangle, "scaleX", 1f, 0f);
+                        view.setText("");
+                        ObjectAnimator anim = ObjectAnimator.ofFloat(view, "scaleX", 1f, 0f);
                         anim.setDuration(150);
                         anim.start();
 
                     }
 
                 }, 2000);
-
-
 
             }
 
@@ -352,7 +418,7 @@ public class MainActivity extends AppCompatActivity  {
         mBabbleOriginController.setClickable(isClickable);
         mBabbleSecondaryController.setClickable(isClickable);
         mBabbleControllerButton.setClickable(isClickable);
-        mBabbleControllerBackground.setClickable(isClickable);
+        //mBabbleControllerBackground.setClickable(isClickable);
     }
 
 
@@ -398,6 +464,8 @@ public class MainActivity extends AppCompatActivity  {
             mBabbleProtection.setVisibility(View.INVISIBLE);
             mBabbleOriginController.setVisibility(View.INVISIBLE);
             mBabbleSecondaryController.setVisibility(View.INVISIBLE);
+            mOriginalControllerBabbleTriangle.setVisibility(View.INVISIBLE);
+            mSecondControllerBabbleTriangle.setVisibility(View.INVISIBLE);
 
 
         } else { // if playing - we pause
@@ -411,6 +479,7 @@ public class MainActivity extends AppCompatActivity  {
             mInvokeBabbleListener = true;
 
             setBabbles();
+            babbleRippleAnimation(false);
 
             setBabbleController(true, true);
             mBabbleProtection.setVisibility(View.VISIBLE);
@@ -427,25 +496,12 @@ public class MainActivity extends AppCompatActivity  {
     private void setBabbleController(boolean toShow, boolean play) {
 
         if (play) {
-
-            if (toShow) {
-                mBabbleControllerBackground.setVisibility(View.VISIBLE);
-                mBabbleControllerButton.setVisibility(View.INVISIBLE);
-
-            } else {
-                mBabbleControllerBackground.setVisibility(View.INVISIBLE);
-                mBabbleControllerButton.setVisibility(View.INVISIBLE);
-            }
-
-
+            mBabbleControllerButton.setImageResource(R.drawable.play_button);
         } else {
-
             mBabbleControllerButton.setImageResource(R.drawable.pumbaa);
-            mBabbleControllerBackground.setVisibility(toShow ? View.VISIBLE : View.INVISIBLE);
-            mBabbleControllerButton.setVisibility(toShow ? View.VISIBLE : View.INVISIBLE);
-
         }
 
+        mBabbleControllerButton.setVisibility(toShow ? View.VISIBLE : View.INVISIBLE);
     }
 
 
@@ -460,6 +516,7 @@ public class MainActivity extends AppCompatActivity  {
 
         if (enterBabble) {
             setBabbleController(true, false);
+            babbleRippleAnimation(true);
         }
 
 
@@ -483,6 +540,7 @@ public class MainActivity extends AppCompatActivity  {
 
         if (exitBabble) {
             setBabbleController(false, false);
+            babbleRippleAnimation(false);
         }
 
     }
