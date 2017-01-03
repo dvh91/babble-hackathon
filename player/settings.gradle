@@ -1,3 +1,0 @@
-include ':app'
-include ':playkit-android'
-project(':playkit-android').projectDir = new File('../playkit-android/playkit')

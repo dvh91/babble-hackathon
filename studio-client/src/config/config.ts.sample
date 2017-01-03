@@ -1,6 +1,0 @@
-export const BabbleConfig = {
-  username: '',
-  password: '',
-  smUserId: '',
-  smAuthToken: ''
-};

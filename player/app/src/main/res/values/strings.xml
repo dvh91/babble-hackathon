@@ -1,5 +1,0 @@
-<resources>
-    <string name="app_name">Babble</string>
-    <string name="time_indicator_separator"> / </string>
-    <string name="player_time_indicator_init">00:00 / 00:00</string>
-</resources>
