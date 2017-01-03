@@ -39,7 +39,7 @@ public class MainActivity extends AppCompatActivity  {
     public static final long MEDIA_START_POSITION = 30;
     private static final long BABBLE_START_TIME = 49070;
     private static final long BABBLE_END_TIME = 49500;
-    private static final long BABBLE_APPEARANCE_INTERVAL = 3000;
+    private static final long BABBLE_APPEARANCE_INTERVAL = 4000;
     private static final long BABBLE_EXIT_INTERVAL = 9000;
     private static final long PLAYER_INVALID_POSITION = -1;
     private static final long LONG_EQUALS = 15;
@@ -50,6 +50,7 @@ public class MainActivity extends AppCompatActivity  {
 
     private PlayerControlsController mPlayerControlsController;
     private boolean mInvokeBabbleListener;
+    private boolean mDisableClicks;
     private BabbleState mBabblePlayingState;
     PlayerControlsView mPlayerControlsView;
     private LinearLayout mPlayerView;
@@ -93,6 +94,7 @@ public class MainActivity extends AppCompatActivity  {
         mIsPaused = false;
         mPausedPosition = 0;
         mInvokeBabbleListener = false;
+        mDisableClicks = false;
         mBabblePlayingState = NONE;
 
         mPlayerView = (LinearLayout) findViewById(R.id.player_view);
@@ -114,7 +116,7 @@ public class MainActivity extends AppCompatActivity  {
             @Override
             public void onClick(View view) {
 
-                if (!mInvokeBabbleListener) {
+                if (!mDisableClicks) {
                     mPlayerControlsController.handleContainerClick();
                 }
 
@@ -312,6 +314,7 @@ public class MainActivity extends AppCompatActivity  {
         flingSet.play(upSet).before(scale);
 
         mBabbleMask.setVisibility(View.VISIBLE);
+        mBabbleControllerButton.setClickable(false);
         setBabbleController(true, false);
 
         flingSet.start();
@@ -324,7 +327,7 @@ public class MainActivity extends AppCompatActivity  {
 
                 mBabbleMask.setVisibility(View.INVISIBLE);
 
-                babbleRippleAnimation(true);
+                //babbleRippleAnimation(true);
 
             }
 
@@ -338,6 +341,7 @@ public class MainActivity extends AppCompatActivity  {
 
             mBabbleRippleAnimator.start();
             mBabbleRipple.setVisibility(View.VISIBLE);
+            mBabbleControllerButton.setClickable(true);
 
         } else  {
 
@@ -525,6 +529,7 @@ public class MainActivity extends AppCompatActivity  {
             mPausedPosition = mBaseAudioPlayer.getCurrentPosition();
 
             mInvokeBabbleListener = true;
+            mDisableClicks = false;
 
             setBabbles();
             babbleRippleAnimation(false);
@@ -564,6 +569,7 @@ public class MainActivity extends AppCompatActivity  {
 
 
         if (enterBabble) {
+            mDisableClicks = true;
             babbleFlingAnimation();
         }
 
@@ -574,6 +580,8 @@ public class MainActivity extends AppCompatActivity  {
 
             mBaseAudioPlayer.setVolume(0);
             mSecondAudioPlayer.play();
+
+            babbleRippleAnimation(true);
 
             Log.v(MainActivity.TAG, "position " + position + " startSwitch = " + startSwitch + " endSwitch = " + endSwitch);
         }
