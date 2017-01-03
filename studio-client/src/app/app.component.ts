@@ -22,6 +22,7 @@ interface Selection { words: Array<Word>; line: number; character: number; }
 interface Character { id: number; name: string; thumb: string; }
 interface Language { language: any; languageCode: any; isDefault: any; }
 interface AppState { characters: Array<Character>, babbles: Array<Selection> }
+interface ActiveBabble { character: Character, string: string }
 
 @Component({
   selector: 'app-root',
@@ -42,6 +43,9 @@ export class AppComponent implements OnInit {
   public languages: Array<Language>;
   public initialState: any;
   public wordsAlignment: Array<any>;
+  public editorDirty: boolean;
+  public previewMode: boolean;
+  public activeBabble: ActiveBabble;
   private assetId: string;
   private downloadUrl: string;
   private kdp: any;
@@ -64,8 +68,9 @@ export class AppComponent implements OnInit {
     this.transcript = [];
     this.languages = [];
     this.currentTime = 0;
-    this.selection = this.setInitialSelctionValue();
     this.popoverActiveState = false;
+    this.editorDirty = false;
+    this.setInitialSelctionValue();
   }
 
   ngOnInit() {
@@ -93,7 +98,7 @@ export class AppComponent implements OnInit {
     return this.activeLanguageCode ? this.activeLanguageCode.toString() : null;
   }
 
-  activateLanguage(l: Language): void {
+  setActiveLanguage(l: Language): void {
     this.activeLanguageCode = l.languageCode;
   }
 
@@ -157,12 +162,14 @@ export class AppComponent implements OnInit {
       .map(res => res.text())
       .subscribe(res => {
         let text = res;
-        let words = text.split(' ');
+        let lines = text.split('\n');
+        let combinedLines = lines.join(' ');
+        let words = combinedLines.split(' ');
         
         words.forEach((w, index) => {
+          if(!w) return;
           let regex = /<time=[0-9]*\.[0-9]*>/ig;
           let results = w.match(regex);
-          
           let word = w.match(/>(.*)</)[1];
           let startTimeString = results[0].match(/[0-9]*\.[0-9]*/)[0];
           let endTimeString = results[1].match(/[0-9]*\.[0-9]*/)[0];
@@ -217,14 +224,30 @@ export class AppComponent implements OnInit {
     kWidget.addReadyCallback((playerId) => {
       this.kdp = document.getElementById(playerId);
 
-      this.kdp.kBind('playerUpdatePlayhead', (currentTime) => {
+      this.kdp.kBind('playerUpdatePlayhead', (currentTime: number) => {
         this.updateCurrentTime(currentTime);
-      });
-
-      this.kdp.kBind('audioTracksReceived' ,(e,data) => {
-        console.log(data);
+        if(this.previewMode) {
+          this.updateCurrentBabbleState(currentTime);
+        }
       });
     });
+  }
+
+
+  private updateCurrentBabbleState(currentTime: number) {
+    let activeBabbles = this.state.babbles.filter(babble => {
+      return currentTime >= babble.words[0].start &&
+      currentTime < babble.words[babble.words.length - 1].end
+    });
+    if(activeBabbles.length > 0) {
+      this.activeBabble = {
+        character: this.getCharacter(activeBabbles[0].character),
+        string: this.getWordsSentence(activeBabbles[0].words)
+      };
+    }
+    else if (!!this.activeBabble.string) {
+      this.activeBabble = null;
+    }
   }
 
   updateCurrentTime(currentTime) {
@@ -335,6 +358,10 @@ export class AppComponent implements OnInit {
 
   getSelectionSentence(): string {
     let words = this.selection.words;
+    return this. getWordsSentence(words);
+  }
+
+  getWordsSentence(words): string {
     return words.map(wordObj => wordObj.word).join(' ');
   }
 
@@ -344,6 +371,7 @@ export class AppComponent implements OnInit {
   }
 
   addBabble() {
+    this.editorDirty = true;
     let babble: Selection = {
       words: this.selection.words,
       line: this.selection.line,
@@ -362,18 +390,18 @@ export class AppComponent implements OnInit {
     return this.state.characters.filter(c => c.id === id)[0];
   }
 
-  isBabbleSelectedOnWord(selection: Selection, wordId, lineId): boolean {
-    return (selection.words.filter(wordObj => wordObj.id === wordId).length > 0) && (selection.line === lineId);
+  isBabbleSelectedOnWord(selection: Selection, wordId, word, lineId): boolean {
+    return (selection.words.filter(wordObj => wordObj.id === wordId && (word ? wordObj.word === word : true)).length > 0) && (selection.line === lineId);
   }
 
-  isBabbleActiveOnWord(wordId, lineId): boolean {
+  isBabbleActiveOnWord(wordId, word, lineId): boolean {
     return this.state.babbles.filter(selection => {
-      return this.isBabbleSelectedOnWord(selection, wordId, lineId);
+      return this.isBabbleSelectedOnWord(selection, wordId, word, lineId);
     }).length > 0
   }
 
-  isStartBabbleActiveOnWord(wordId, lineId): boolean {
-    return this.isBabbleActiveOnWord(wordId, lineId) && !this.isBabbleActiveOnWord(wordId - 1, lineId);
+  isStartBabbleActiveOnWord(wordId, word, lineId): boolean {
+    return this.isBabbleActiveOnWord(wordId, word, lineId) && !this.isBabbleActiveOnWord(wordId - 1, '', lineId);
   }
 
   playSelectionAudio(languageCode) {
@@ -392,11 +420,12 @@ export class AppComponent implements OnInit {
     
   }
 
-  filter(filter) {
+  filter(filter): void {
     this.filterState = filter;
   }
 
-  publishBabbles() {
+  publishBabbles(): void {
+    this.editorDirty = false;
     const request = new MediaUpdateAction({ 
       entryId: this.assetId,
       mediaEntry: new KalturaMediaEntry().setData(data => {
@@ -410,26 +439,30 @@ export class AppComponent implements OnInit {
       });
   }
 
-  showToast() {
+  showToast(): void {
     this.toast = true;
     setTimeout(() => this.toast = false, 2000);
   }
 
-  private setInitialSelctionValue() {
+  chooseCharacter(id): void {
+    this.selection.character = parseInt(id);
+  }
+
+  private setInitialSelctionValue(): void {
     let selection: Selection = {
       words: [],
       line: -1,
       character: 1
     };
 
-    return this.selection = selection;
+    this.selection = selection;
   }
 
-  private resetSelection() {
-    this.selection = this.setInitialSelctionValue();
+  private resetSelection(): void {
+    this.setInitialSelctionValue();
   }
 
-  private positionPopover() {
+  private positionPopover(): void {
     let x = Math.abs((this.selectionEndXPosition - this.selectionStartXPosition) / 2);
 
     this.popover.nativeElement.style.left = `${x + Math.min(this.selectionEndXPosition, this.selectionStartXPosition) - 165}px`;
