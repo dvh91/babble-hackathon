@@ -22,6 +22,7 @@ interface Selection { words: Array<Word>; line: number; character: number; }
 interface Character { id: number; name: string; thumb: string; }
 interface Language { language: any; languageCode: any; isDefault: any; }
 interface AppState { characters: Array<Character>, babbles: Array<Selection> }
+interface ActiveBabble { character: Character, string: string }
 
 @Component({
   selector: 'app-root',
@@ -43,6 +44,8 @@ export class AppComponent implements OnInit {
   public initialState: any;
   public wordsAlignment: Array<any>;
   public editorDirty: boolean;
+  public previewMode: boolean;
+  public activeBabble: ActiveBabble;
   private assetId: string;
   private downloadUrl: string;
   private kdp: any;
@@ -221,14 +224,30 @@ export class AppComponent implements OnInit {
     kWidget.addReadyCallback((playerId) => {
       this.kdp = document.getElementById(playerId);
 
-      this.kdp.kBind('playerUpdatePlayhead', (currentTime) => {
+      this.kdp.kBind('playerUpdatePlayhead', (currentTime: number) => {
         this.updateCurrentTime(currentTime);
-      });
-
-      this.kdp.kBind('audioTracksReceived' ,(e,data) => {
-        console.log(data);
+        if(this.previewMode) {
+          this.updateCurrentBabbleState(currentTime);
+        }
       });
     });
+  }
+
+
+  private updateCurrentBabbleState(currentTime: number) {
+    let activeBabbles = this.state.babbles.filter(babble => {
+      return currentTime >= babble.words[0].start &&
+      currentTime < babble.words[babble.words.length - 1].end
+    });
+    if(activeBabbles.length > 0) {
+      this.activeBabble = {
+        character: this.getCharacter(activeBabbles[0].character),
+        string: this.getWordsSentence(activeBabbles[0].words)
+      };
+    }
+    else if (!!this.activeBabble.string) {
+      this.activeBabble = null;
+    }
   }
 
   updateCurrentTime(currentTime) {
@@ -339,6 +358,10 @@ export class AppComponent implements OnInit {
 
   getSelectionSentence(): string {
     let words = this.selection.words;
+    return this. getWordsSentence(words);
+  }
+
+  getWordsSentence(words): string {
     return words.map(wordObj => wordObj.word).join(' ');
   }
 

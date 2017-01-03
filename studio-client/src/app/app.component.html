@@ -67,7 +67,12 @@
       <div class="video-container">
         <div class="ratio-maker">
           <div class="video-holder" id="kaltura-player"></div>
+          <div class="preview-overlay" *ngIf="previewMode && activeBabble">
+            <img [src]="activeBabble?.character?.image" class="babble-thumb" alt="">
+            <div><p class="babble-string">{{activeBabble?.string}}</p></div>
+          </div>
         </div>
+        <button (click)="previewMode = !previewMode" class="btn btn-primary">{{previewMode ? 'Exit preview' : 'Enter preview'}}</button>
       </div>
     </div>
   </div>
