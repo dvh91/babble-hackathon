@@ -483,11 +483,39 @@ public class PlayerControlsController implements PlayerControlsControllerInterfa
     }
 
     private void seek(long position) {
+
+
         if (mVideoPlayer != null && mBaseAudioPlayer != null) {
+            
             mVideoPlayer.seekTo(position);
             mBaseAudioPlayer.seekTo(position);
+
+
+            mVideoPlayer.pause();
+            mBaseAudioPlayer.pause();
+
+
+            mVideoPlayer.addEventListener(new PKEvent.Listener() {
+
+                @Override
+                public void onEvent(PKEvent event) {
+
+                    mVideoPlayer.play();
+                    mBaseAudioPlayer.play();
+
+
+                }
+
+            }, PlayerEvent.Type.SEEKED);
+
+
         }
+
+
     }
+
+
+
 
     private void showMessage(int string) {
 
