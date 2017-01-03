@@ -32,7 +32,7 @@ import { TranscriptPipe } from './filters/transcript-filter';
 export class AppModule {
   constructor(private httpConfiguration: KalturaHttpConfiguration){
     // use the http configuration to setup the url to kaltura server
-    this.httpConfiguration.endpointUrl = 'http://www.kaltura.com/api_v3/';
+    this.httpConfiguration.endpointUrl = 'https://www.kaltura.com/api_v3/';
     this.httpConfiguration.clientTag = 'babble-studio';
     this.httpConfiguration.partnerId = 1914121;
   }
