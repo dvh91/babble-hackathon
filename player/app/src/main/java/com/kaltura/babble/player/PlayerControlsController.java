@@ -112,6 +112,12 @@ public class PlayerControlsController implements PlayerControlsControllerInterfa
 
 
 
+    public void hideControllers() {
+
+        mPlayerControlsView.setControlsVisibility(false);
+        mPlayerControlsView.setPlayPauseVisibility(false, false);
+
+    }
 
 
     @Override

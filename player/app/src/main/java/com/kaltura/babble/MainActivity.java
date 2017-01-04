@@ -36,7 +36,7 @@ public class MainActivity extends AppCompatActivity  {
     //private static final long BABBLE_START_TIME = 24740;
     //private static final long BABBLE_END_TIME = 28900;
 
-    public static final long MEDIA_START_POSITION = 30;
+    public static final long MEDIA_START_POSITION = 40;
     private static final long BABBLE_START_TIME = 49070;
     private static final long BABBLE_END_TIME = 49500;
     private static final long BABBLE_APPEARANCE_INTERVAL = 4000;
@@ -512,7 +512,9 @@ public class MainActivity extends AppCompatActivity  {
             }, PlayerEvent.Type.SEEKED);
 
 
+            mDisableClicks = false;
             setBabbleController(false, false);
+
             mBabbleProtection.setVisibility(View.INVISIBLE);
             mBabbleOriginController.setVisibility(View.INVISIBLE);
             mBabbleSecondaryController.setVisibility(View.INVISIBLE);
@@ -529,7 +531,6 @@ public class MainActivity extends AppCompatActivity  {
             mPausedPosition = mBaseAudioPlayer.getCurrentPosition();
 
             mInvokeBabbleListener = true;
-            mDisableClicks = false;
 
             setBabbles();
             babbleRippleAnimation(false);
@@ -570,6 +571,7 @@ public class MainActivity extends AppCompatActivity  {
 
         if (enterBabble) {
             mDisableClicks = true;
+            mPlayerControlsController.hideControllers();
             babbleFlingAnimation();
         }
 
@@ -599,6 +601,7 @@ public class MainActivity extends AppCompatActivity  {
         if (exitBabble) {
             setBabbleController(false, false);
             babbleRippleAnimation(false);
+            mDisableClicks = false;
         }
 
     }
