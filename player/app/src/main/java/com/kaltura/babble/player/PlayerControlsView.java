@@ -30,8 +30,8 @@ public class PlayerControlsView extends FrameLayout {
 
     private ImageView mPlayPause;
     private ImageView mBackIcon;
-    private ImageView mScreenSizeIcon;
-    private ProgressBar mProgressBar;
+    //private ImageView mScreenSizeIcon;
+    //private ProgressBar mProgressBar;
     private TextView mTimeIndicator;
     private SeekBar mSeekBar;
     private ConstraintLayout mPlayerControls;
@@ -62,12 +62,12 @@ public class PlayerControlsView extends FrameLayout {
 
     private void initPlayerControls() {
 
-        mProgressBar = (ProgressBar) findViewById(R.id.icon_progress_bar);
+        //mProgressBar = (ProgressBar) findViewById(R.id.icon_progress_bar);
         mTimeIndicator = (TextView) findViewById(R.id.time_indicator);
         mSeekBar = (SeekBar) findViewById(R.id.seek_bar);
         mPlayPause = (ImageView) findViewById(R.id.icon_play_pause);
         mBackIcon = (ImageView) findViewById(R.id.icon_back);
-        mScreenSizeIcon = (ImageView) findViewById(R.id.icon_screen_size);
+        //mScreenSizeIcon = (ImageView) findViewById(R.id.icon_screen_size);
         mPlayerControls = (ConstraintLayout) findViewById(R.id.player_controls);
     }
 
@@ -82,7 +82,7 @@ public class PlayerControlsView extends FrameLayout {
 
 
     public void setProgressBarVisibility(boolean toShow) {
-        mProgressBar.setVisibility(toShow ? VISIBLE : INVISIBLE);
+        //mProgressBar.setVisibility(toShow ? VISIBLE : INVISIBLE);
     }
 
     public void setBackButtonVisibility(boolean toShow) {
@@ -90,7 +90,7 @@ public class PlayerControlsView extends FrameLayout {
     }
 
     public void setScreenSizeButtonVisibility(boolean toShow) {
-        mScreenSizeIcon.setVisibility(toShow ? VISIBLE : GONE);
+        //mScreenSizeIcon.setVisibility(toShow ? VISIBLE : GONE);
     }
 
     public void setSeekBarVisibility(boolean toShow) {
@@ -116,9 +116,9 @@ public class PlayerControlsView extends FrameLayout {
             if (isEnded) {
                 mPlayPause.setImageResource(R.drawable.replay);
             } else if (toShowPlayView) {
-                mPlayPause.setImageResource(R.drawable.play);
+                mPlayPause.setImageResource(R.drawable.play_button);
             } else {
-                mPlayPause.setImageResource(R.drawable.pause);
+                mPlayPause.setImageResource(R.drawable.pause_button);
             }
             mPlayPause.setVisibility(View.VISIBLE);
 
@@ -161,12 +161,15 @@ public class PlayerControlsView extends FrameLayout {
             }
         });
 
+
+        /*
         mScreenSizeIcon.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
                 mControlsClickListener.onControlsEvent(new PlayerControlsEvents.ControlsEvent(FULL_SCREEN_SIZE));
             }
         });
+        */
 
 
         mSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {

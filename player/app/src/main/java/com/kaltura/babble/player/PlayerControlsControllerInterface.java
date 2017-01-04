@@ -15,7 +15,7 @@ public interface PlayerControlsControllerInterface {
 
     void onApplicationPaused();
 
-    void setPlayer(Player player, PlayerConfig playerConfig);
+    void setPlayer(Player videoPlayer, Player baseAudioPlayer);
 
     void handleContainerClick();
 
